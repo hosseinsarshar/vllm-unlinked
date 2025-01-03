@@ -148,10 +148,18 @@ def _support_torch_compile(
         self.vllm_config = vllm_config
         # for CompilationLevel.DYNAMO_AS_IS , the upper level model runner
         # will handle the compilation, so we don't need to do anything here.
-        self.do_not_compile = \
-            vllm_config.compilation_config.level in [
-            CompilationLevel.NO_COMPILATION, CompilationLevel.DYNAMO_AS_IS
-        ] or not supports_dynamo()
+
+        # hosseins start: added line 156 "return"
+
+        # self.do_not_compile = \
+        #     vllm_config.compilation_config.level in [
+        #     CompilationLevel.NO_COMPILATION, CompilationLevel.DYNAMO_AS_IS
+        # ] or not supports_dynamo()
+        
+        self.do_not_compile = True
+        return
+        # hosseins end
+
         if self.do_not_compile:
             return
         compilation_counter.num_models_seen += 1

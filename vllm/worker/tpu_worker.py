@@ -280,7 +280,8 @@ def _make_src_to_dst(
     return src_indices, dst_indices
 
 
-@torch.compile(backend="openxla")
+# hosseins: removed torch.compile
+# @torch.compile(backend="openxla")
 def _insert_kv(
     k: torch.Tensor,
     v: torch.Tensor,

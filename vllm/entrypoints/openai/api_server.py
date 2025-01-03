@@ -365,7 +365,9 @@ async def create_chat_completion(request: ChatCompletionRequest,
 
 @router.post("/v1/completions")
 async def create_completion(request: CompletionRequest, raw_request: Request):
+    print("hosseins: create_completion")
     handler = completion(raw_request)
+    print(f"hosseins: {handler=}")
     if handler is None:
         return base(raw_request).create_error_response(
             message="The model does not support Completions API")
@@ -574,6 +576,7 @@ def init_app_state(
         tool_parser=args.tool_call_parser,
         enable_prompt_tokens_details=args.enable_prompt_tokens_details,
     ) if model_config.runner_type == "generate" else None
+    print("hosseins: init_app_state")
     state.openai_serving_completion = OpenAIServingCompletion(
         engine_client,
         model_config,
