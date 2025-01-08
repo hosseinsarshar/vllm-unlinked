@@ -388,7 +388,9 @@ async def create_chat_completion(request: ChatCompletionRequest,
 @router.post("/v1/completions")
 @with_cancellation
 async def create_completion(request: CompletionRequest, raw_request: Request):
+    print("hosseins: create_completion")
     handler = completion(raw_request)
+    print(f"hosseins: {handler=}")
     if handler is None:
         return base(raw_request).create_error_response(
             message="The model does not support Completions API")
@@ -667,6 +669,7 @@ def init_app_state(
     state: State,
     args: Namespace,
 ) -> None:
+    print("hosseins: init_app_state")
     if args.served_model_name is not None:
         served_model_names = args.served_model_name
     else:

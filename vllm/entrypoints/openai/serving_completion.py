@@ -69,6 +69,7 @@ class OpenAIServingCompletion(OpenAIServing):
             - suffix (the language models we currently support do not support
             suffix)
         """
+        print("hosseins: OpenAIServingCompletion.create_completion")
         error_check_ret = await self._check_model(request)
         if error_check_ret is not None:
             return error_check_ret
@@ -80,6 +81,7 @@ class OpenAIServingCompletion(OpenAIServing):
             raise self.engine_client.dead_error
 
         # Return error for unsupported features.
+        print("hosseins: 1")
         if request.suffix is not None:
             return self.create_error_response(
                 "suffix is not currently supported")
@@ -87,6 +89,7 @@ class OpenAIServingCompletion(OpenAIServing):
         request_id = f"cmpl-{self._base_request_id(raw_request)}"
         created_time = int(time.time())
 
+        print("hosseins: 2")
         request_metadata = RequestResponseMetadata(request_id=request_id)
         if raw_request:
             raw_request.state.request_metadata = request_metadata
@@ -96,8 +99,10 @@ class OpenAIServingCompletion(OpenAIServing):
                 lora_request,
                 prompt_adapter_request,
             ) = self._maybe_get_adapters(request)
+            print("hosseins: 3")
 
             tokenizer = await self.engine_client.get_tokenizer(lora_request)
+            print(f"hosseins: 4 - {request=}")
 
             request_prompts, engine_prompts = await self._preprocess_completion(
                 request,
@@ -106,6 +111,9 @@ class OpenAIServingCompletion(OpenAIServing):
                 truncate_prompt_tokens=request.truncate_prompt_tokens,
                 add_special_tokens=request.add_special_tokens,
             )
+            print(f"hosseins: 5 - {request_prompts=}")
+            print(f"hosseins: 6 - {engine_prompts=}")
+
         except ValueError as e:
             logger.exception("Error in preprocessing prompt inputs")
             return self.create_error_response(str(e))
@@ -114,9 +122,11 @@ class OpenAIServingCompletion(OpenAIServing):
         generators: List[AsyncGenerator[RequestOutput, None]] = []
         try:
             for i, engine_prompt in enumerate(engine_prompts):
+                print(f"hosseins: 7 - {i=} - {engine_prompt=}")
                 sampling_params: Union[SamplingParams, BeamSearchParams]
                 default_max_tokens = self.max_model_len - len(
                     engine_prompt["prompt_token_ids"])
+                print(f"hosseins: 8 - {default_max_tokens=}")
                 # Build default sampling params
                 default_sampling_params = (
                     self.model_config.get_diff_sampling_param())
@@ -129,14 +139,16 @@ class OpenAIServingCompletion(OpenAIServing):
                         self.model_config.logits_processor_pattern,
                         default_sampling_params)
 
+                print(f"hosseins: 9 - {sampling_params=}")
                 request_id_item = f"{request_id}-{i}"
+                rint(f"hosseins: 10 - {request_id_item=}")
 
                 self._log_inputs(request_id_item,
                                  request_prompts[i],
                                  params=sampling_params,
                                  lora_request=lora_request,
                                  prompt_adapter_request=prompt_adapter_request)
-
+                                                 
                 trace_headers = (await
                                  self._get_trace_headers(raw_request.headers))
 
@@ -156,6 +168,8 @@ class OpenAIServingCompletion(OpenAIServing):
                         trace_headers=trace_headers,
                         priority=request.priority,
                     )
+                    print(f"hosseins: 11 - {generator=}")
+
 
                 generators.append(generator)
         except ValueError as e:
@@ -166,7 +180,7 @@ class OpenAIServingCompletion(OpenAIServing):
 
         model_name = self.models.model_name(lora_request)
         num_prompts = len(engine_prompts)
-
+        print(f"hosseins: 12 - {num_prompts=}")
         # Similar to the OpenAI API, when n != best_of, we do not stream the
         # results. In addition, we do not stream the results when use
         # beam search.
@@ -175,6 +189,7 @@ class OpenAIServingCompletion(OpenAIServing):
                   and not request.use_beam_search)
 
         # Streaming response
+        print(f"hosseins: 13 - {stream=}")
         if stream:
             return self.completion_stream_generator(
                 request,
@@ -243,6 +258,7 @@ class OpenAIServingCompletion(OpenAIServing):
         tokenizer: AnyTokenizer,
         request_metadata: RequestResponseMetadata,
     ) -> AsyncGenerator[str, None]:
+        print(f"hosseins - 13")
         num_choices = 1 if request.n is None else request.n
         previous_text_lens = [0] * num_choices * num_prompts
         previous_num_tokens = [0] * num_choices * num_prompts
@@ -259,6 +275,8 @@ class OpenAIServingCompletion(OpenAIServing):
 
         try:
             async for prompt_idx, res in result_generator:
+                print(f"hosseins - 14 {prompt_idx=}")
+                print(f"hosseins - 15 {res=}")
                 prompt_token_ids = res.prompt_token_ids
                 prompt_logprobs = res.prompt_logprobs
                 prompt_text = res.prompt
@@ -273,6 +291,9 @@ class OpenAIServingCompletion(OpenAIServing):
 
                 for output in res.outputs:
                     i = output.index + prompt_idx * num_choices
+                    print(f"hosseins - 16.0 {i=}")
+                    print(f"hosseins - 16 {output=}")
+                    print(f"hosseins - 17 {request.echo=}")
 
                     assert request.max_tokens is not None
                     if request.echo and not has_echoed[i]:
@@ -306,7 +327,9 @@ class OpenAIServingCompletion(OpenAIServing):
                             # Chunked prefill case, don't return empty chunks
                             continue
 
+                    print(f"hosseins - 18 {request.logprobs=}")
                     if request.logprobs is not None:
+                        print(f"hosseins - 19 {out_logprobs=}")
                         assert out_logprobs is not None, (
                             "Did not output logprobs")
                         logprobs = self._create_completion_logprobs(
@@ -316,6 +339,7 @@ class OpenAIServingCompletion(OpenAIServing):
                             tokenizer=tokenizer,
                             initial_text_offset=previous_text_lens[i],
                         )
+                        print(f"hosseins - 20 {logprobs=}")
                     else:
                         logprobs = None
 
@@ -323,6 +347,10 @@ class OpenAIServingCompletion(OpenAIServing):
                     previous_num_tokens[i] += len(output.token_ids)
                     finish_reason = output.finish_reason
                     stop_reason = output.stop_reason
+
+                    print(f"hosseins - 21 {previous_text_lens[i]=}")
+                    print(f"hosseins - 22 {previous_num_tokens[i]=}")
+                    print(f"hosseins - 23 {previous_num_tokens[i]=}")
 
                     chunk = CompletionStreamResponse(
                         id=request_id,
@@ -337,6 +365,10 @@ class OpenAIServingCompletion(OpenAIServing):
                                 stop_reason=stop_reason,
                             )
                         ])
+
+                    print(f"hosseins - 24 {chunk=}")
+                    print(f"hosseins - 25 {include_continuous_usage=}")
+
                     if include_continuous_usage:
                         prompt_tokens = num_prompt_tokens[prompt_idx]
                         completion_tokens = previous_num_tokens[i]
@@ -346,7 +378,12 @@ class OpenAIServingCompletion(OpenAIServing):
                             total_tokens=prompt_tokens + completion_tokens,
                         )
 
+                        print(f"hosseins - 26 {prompt_tokens=}")
+                        print(f"hosseins - 27 {completion_tokens=}")
+
                     response_json = chunk.model_dump_json(exclude_unset=False)
+                    print(f"hosseins - 28 {response_json=}")
+
                     yield f"data: {response_json}\n\n"
 
             total_prompt_tokens = sum(num_prompt_tokens)
@@ -356,6 +393,9 @@ class OpenAIServingCompletion(OpenAIServing):
                 completion_tokens=total_completion_tokens,
                 total_tokens=total_prompt_tokens + total_completion_tokens)
 
+            print(f"hosseins - 29 {final_usage_info=}")
+            print(f"hosseins - 30 {include_usage=}")
+
             if include_usage:
                 final_usage_chunk = CompletionStreamResponse(
                     id=request_id,
@@ -364,16 +404,24 @@ class OpenAIServingCompletion(OpenAIServing):
                     choices=[],
                     usage=final_usage_info,
                 )
+                print(f"hosseins - 31 {final_usage_chunk=}")
+
+
                 final_usage_data = (final_usage_chunk.model_dump_json(
                     exclude_unset=False, exclude_none=True))
+                print(f"hosseins - 32 {final_usage_data=}")
+
                 yield f"data: {final_usage_data}\n\n"
 
             # report to FastAPI middleware aggregate usage across all choices
             request_metadata.final_usage_info = final_usage_info
+            print(f"hosseins - 33 {request_metadata.final_usage_info=}")
 
         except Exception as e:
             # TODO: Use a vllm-specific Validation Error
             data = self.create_streaming_error_response(str(e))
+            print(f"hosseins - 34 {data=}")
+
             yield f"data: {data}\n\n"
         yield "data: [DONE]\n\n"
 

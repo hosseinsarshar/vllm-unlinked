@@ -1164,14 +1164,16 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
                     "provided. Defaulting to scaling factors of 1.0. "
                     "This may lead to less accurate results!")
 
-        if self.vllm_config.compilation_config.level ==\
-            CompilationLevel.DYNAMO_AS_IS and supports_dynamo():
-            backend = self.vllm_config.compilation_config.init_backend(
-                self.vllm_config)
-            self.model = torch.compile(
-                self.model,
-                fullgraph=envs.VLLM_TEST_DYNAMO_FULLGRAPH_CAPTURE,
-                backend=backend)
+        # hosseins: start - removed this blocked
+        # if self.vllm_config.compilation_config.level ==\
+        #     CompilationLevel.DYNAMO_AS_IS and supports_dynamo():
+        #     backend = self.vllm_config.compilation_config.init_backend(
+        #         self.vllm_config)
+        #     self.model = torch.compile(
+        #         self.model,
+        #         fullgraph=envs.VLLM_TEST_DYNAMO_FULLGRAPH_CAPTURE,
+        #         backend=backend)
+        # hosseins end
 
     def save_sharded_state(
         self,
