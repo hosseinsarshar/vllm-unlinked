@@ -141,14 +141,14 @@ class OpenAIServingCompletion(OpenAIServing):
 
                 print(f"hosseins: 9 - {sampling_params=}")
                 request_id_item = f"{request_id}-{i}"
-                rint(f"hosseins: 10 - {request_id_item=}")
+                print(f"hosseins: 10 - {request_id_item=}")
 
                 self._log_inputs(request_id_item,
                                  request_prompts[i],
                                  params=sampling_params,
                                  lora_request=lora_request,
                                  prompt_adapter_request=prompt_adapter_request)
-                                                 
+
                 trace_headers = (await
                                  self._get_trace_headers(raw_request.headers))
 

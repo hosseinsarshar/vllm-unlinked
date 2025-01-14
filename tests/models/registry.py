@@ -228,6 +228,7 @@ _EXAMPLE_MODELS = {
 class HfExampleModels:
     def __init__(self, hf_models: Mapping[str, _HfExamplesInfo]) -> None:
         super().__init__()
+        print(f"hosseins: HfExampleModels -> __init__()")
 
         self.hf_models = hf_models
 
@@ -235,6 +236,8 @@ class HfExampleModels:
         return self.hf_models.keys()
 
     def get_hf_info(self, model_arch: str) -> _HfExamplesInfo:
+        print(f"hosseins: HfExampleModels -> get_hf_info() {model_arch=}")
+
         return self.hf_models[model_arch]
 
 

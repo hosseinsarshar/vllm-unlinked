@@ -29,6 +29,9 @@ class RayTPUExecutor(TPUExecutor):
     uses_ray: bool = True
 
     def __init__(self, *args, **kwargs):
+        print(f"hosseins: RayTPUExecutor -> __init__() {args=}")
+        print(f"hosseins: RayTPUExecutor -> __init__() {kwargs=}")
+
         # This is non-None when the execute model loop is running
         # in the parallel workers. It's a coroutine in the AsyncLLMEngine case.
         self.parallel_worker_tasks: Optional[Union[Any, Awaitable[Any]]] = None
@@ -39,6 +42,7 @@ class RayTPUExecutor(TPUExecutor):
         super().__init__(*args, **kwargs)
 
     def _init_executor(self) -> None:
+        print(f"hosseins: RayTPUExecutor -> _init_executor()")
         assert self.parallel_config.distributed_executor_backend == "ray"
         placement_group = self.parallel_config.placement_group
 
@@ -52,6 +56,8 @@ class RayTPUExecutor(TPUExecutor):
 
     def _init_workers_ray(self, placement_group: "PlacementGroup",
                           **ray_remote_kwargs):
+        print(f"hosseins: RayTPUExecutor -> _init_workers_ray() {ray_remote_kwargs=}")
+        
         # The driver dummy worker does not actually use any resources.
         # It holds the resource for the driver worker.
         self.driver_dummy_worker: Optional[RayWorkerWrapper] = None
@@ -190,6 +196,8 @@ class RayTPUExecutor(TPUExecutor):
         self,
         execute_model_req: Optional[ExecuteModelRequest] = None
     ) -> List[SamplerOutput]:
+        print(f"hosseins: RayTPUExecutor -> _driver_execute_model() {execute_model_req=}")
+        
         """Run execute_model in the driver worker.
 
         Passing None will cause the driver to stop the model execution
@@ -209,6 +217,9 @@ class RayTPUExecutor(TPUExecutor):
         use_ray_compiled_dag: bool = False,
         **kwargs,
     ) -> Any:
+        print(f"hosseins: RayTPUExecutor -> _run_workers() {all_args=}")
+        print(f"hosseins: RayTPUExecutor -> _run_workers() {all_kwargs=}")
+        
         """Runs the given method on all workers. Can be used in the following
         ways:
 
@@ -257,9 +268,12 @@ class RayTPUExecutor(TPUExecutor):
     def _wait_for_tasks_completion(self, parallel_worker_tasks: Any) -> None:
         """Wait for futures returned from _run_workers() with
         async_run_remote_workers_only to complete."""
+        print(f"hosseins: RayTPUExecutor -> _wait_for_tasks_completion() {parallel_worker_tasks=}")
+
         ray.get(parallel_worker_tasks)
 
     def determine_num_available_blocks(self) -> Tuple[int, int]:
+        print(f"hosseins: RayTPUExecutor -> determine_num_available_blocks()")
         num_blocks = self._run_workers("determine_num_available_blocks", )
         num_tpu_blocks = min(b[0] for b in num_blocks)
         num_cpu_blocks = min(b[1] for b in num_blocks)
@@ -267,6 +281,8 @@ class RayTPUExecutor(TPUExecutor):
 
     def initialize_cache(self, num_gpu_blocks: int,
                          num_cpu_blocks: int) -> None:
+        print(f"hosseins: RayTPUExecutor -> initialize_cache() {num_gpu_blocks=}")
+        print(f"hosseins: RayTPUExecutor -> initialize_cache() {num_cpu_blocks=}")
         logger.info("# TPU blocks: %d, # CPU blocks: %d", num_gpu_blocks,
                     num_cpu_blocks)
         self.cache_config.num_gpu_blocks = num_gpu_blocks
@@ -279,6 +295,7 @@ class RayTPUExecutor(TPUExecutor):
         self,
         execute_model_req: ExecuteModelRequest,
     ) -> List[SamplerOutput]:
+        print(f"hosseins: RayTPUExecutor -> execute_model() {execute_model_req=}")
         if self.parallel_worker_tasks is None:
             self.parallel_worker_tasks = self._run_workers(
                 "start_worker_execution_loop",
@@ -289,6 +306,7 @@ class RayTPUExecutor(TPUExecutor):
         return self._driver_execute_model(execute_model_req)
 
     def stop_remote_worker_execution_loop(self) -> None:
+        print(f"hosseins: RayTPUExecutor -> stop_remote_worker_execution_loop()")
         if self.parallel_worker_tasks is None:
             return
 
@@ -303,12 +321,15 @@ class RayTPUExecutor(TPUExecutor):
 class RayTPUExecutorAsync(RayTPUExecutor, ExecutorAsyncBase):
 
     def __init__(self, *args, **kwargs):
+        print(f"hosseins: RayTPUExecutorAsync -> __init__() {args=}")
+        print(f"hosseins: RayTPUExecutorAsync -> __init__() {kwargs=}")
         super().__init__(*args, **kwargs)
         self.driver_exec_method = make_async(self.driver_worker.execute_method)
 
     async def execute_model_async(
             self,
             execute_model_req: ExecuteModelRequest) -> List[SamplerOutput]:
+        print(f"hosseins: RayTPUExecutorAsync -> __init__() {execute_model_req=}")
         if self.parallel_worker_tasks is None:
             # Start model execution loop running in the parallel workers
             self.parallel_worker_tasks = asyncio.create_task(
@@ -318,6 +339,7 @@ class RayTPUExecutorAsync(RayTPUExecutor, ExecutorAsyncBase):
         return await self._driver_execute_model_async(execute_model_req)
 
     async def stop_remote_worker_execution_loop_async(self) -> None:
+        print(f"hosseins: RayTPUExecutorAsync -> stop_remote_worker_execution_loop_async()")
         if self.parallel_worker_tasks is None:
             return
 
@@ -332,10 +354,12 @@ class RayTPUExecutorAsync(RayTPUExecutor, ExecutorAsyncBase):
         self,
         execute_model_req: Optional[ExecuteModelRequest] = None
     ) -> List[SamplerOutput]:
+        print(f"hosseins: RayTPUExecutorAsync -> _driver_execute_model_async() {execute_model_req=}")
         return await self.driver_exec_method("execute_model",
                                              execute_model_req)
 
     async def _start_worker_execution_loop(self):
+        print(f"hosseins: RayTPUExecutorAsync -> _start_worker_execution_loop()")
         coros = [
             worker.execute_method.remote("start_worker_execution_loop")
             for worker in self.workers

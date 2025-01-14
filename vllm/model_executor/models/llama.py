@@ -55,6 +55,7 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, extract_layer_index,
                     is_pp_missing_parameter,
                     make_empty_intermediate_tensors_factory, make_layers,
                     maybe_prefix)
+import pdb
 
 
 class LlamaMLP(nn.Module):
@@ -69,6 +70,14 @@ class LlamaMLP(nn.Module):
         prefix: str = "",
     ) -> None:
         super().__init__()
+        # print("***************** REACHED pdb.set_trace() *****************")
+        # pdb.set_trace()
+
+        print(f"hossein: LlamaMLP -> __init__ : [{hidden_size=}]")
+        print(f"hossein: LlamaMLP -> __init__ : [{intermediate_size=}]")
+        print(f"hossein: LlamaMLP -> __init__ : [{bias=}]")
+        print(f"hossein: LlamaMLP -> __init__ : [{quant_config=}]")
+
         self.gate_up_proj = MergedColumnParallelLinear(
             input_size=hidden_size,
             output_sizes=[intermediate_size] * 2,
@@ -113,12 +122,18 @@ class LlamaAttention(nn.Module):
     ) -> None:
         super().__init__()
         layer_idx = extract_layer_index(prefix)
+        print(f"hosseins: LlamaAttention -> __init__() : [{layer_idx=}]")
         self.hidden_size = hidden_size
         tp_size = get_tensor_model_parallel_world_size()
+        print(f"hosseins: LlamaAttention -> __init__() : [{tp_size=}]")
         self.total_num_heads = num_heads
         assert self.total_num_heads % tp_size == 0
         self.num_heads = self.total_num_heads // tp_size
         self.total_num_kv_heads = num_kv_heads
+
+        print(f"hosseins: LlamaAttention -> __init__() : [{self.total_num_kv_heads=}]")
+
+
         if self.total_num_kv_heads >= tp_size:
             # Number of KV heads is greater than TP size, so we partition
             # the KV heads across multiple tensor parallel GPUs.
@@ -216,6 +231,7 @@ class LlamaDecoderLayer(nn.Module):
         quant_config: Optional[QuantizationConfig] = None,
         prefix: str = "",
     ) -> None:
+        print(f"hosseins: LlamaDecoderLayer -> __init__() {config=}")
         super().__init__()
         self.hidden_size = config.hidden_size
         rope_theta = getattr(config, "rope_theta", 10000)
@@ -508,6 +524,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
     }
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
+        print(f"hosseins: LlamaForCausalLM -> __init__() {vllm_config=}")
         super().__init__()
         config = vllm_config.model_config.hf_config
         quant_config = vllm_config.quant_config

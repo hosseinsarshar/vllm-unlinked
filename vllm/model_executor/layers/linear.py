@@ -35,7 +35,7 @@ WEIGHT_LOADER_V2_SUPPORTED = [
     "HQQMarlinMethod"
 ]
 
-
+print("hosseins: linear.py is called")
 def adjust_marlin_shard(param, shard_size, shard_offset):
     marlin_tile_size = getattr(param, "marlin_tile_size", None)
     if marlin_tile_size is None:
@@ -345,7 +345,11 @@ class ColumnParallelLinear(LinearBase):
 
         use_bitsandbytes_4bit = getattr(param, "use_bitsandbytes_4bit", False)
 
+        print(f"hosseins: {output_dim=}")
+        print(f"hosseins: {tp_rank=}")
+
         param_data = param.data
+        print(f"hosseins: {param_data=}")
         # bitsandbytes loads the weights of the specific portion
         # no need to narrow here
         if output_dim is not None and not use_bitsandbytes_4bit:
@@ -427,6 +431,8 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                  prefix: str = ""):
         self.output_sizes = output_sizes
         tp_size = get_tensor_model_parallel_world_size()
+        print(f"hosseins MergedColumnParallelLinear -> __init__: {tp_size=}")
+
         assert all(output_size % tp_size == 0 for output_size in output_sizes)
         super().__init__(input_size=input_size,
                          output_size=sum(output_sizes),
@@ -444,8 +450,14 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
         # Special case for GGUF
         # initialize GGUF param after we know the quantize type
+        # breakpoint()
         is_gguf_weight = getattr(param, "is_gguf_weight", False)
         is_gguf_weight_type = getattr(param, "is_gguf_weight_type", False)
+
+        print(f"hosseins: MergedColumnParallelLinear -> weight_loader {loaded_shard_id=}")
+        print(f"hosseins: MergedColumnParallelLinear -> weight_loader {is_gguf_weight=}")
+        print(f"hosseins: MergedColumnParallelLinear -> weight_loader {is_gguf_weight_type=}")
+        
         if is_gguf_weight_type:
             param.data[loaded_shard_id].copy_(loaded_weight)
             param.shard_weight_type[loaded_shard_id] = loaded_weight.item()
@@ -455,8 +467,15 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
             tp_size = get_tensor_model_parallel_world_size()
             tp_rank = get_tensor_model_parallel_rank()
 
+            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {output_dim=}")
+            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {tp_rank=}")
+
+
             output_dim = getattr(param, "output_dim", None)
             shard_size = loaded_weight.size(output_dim) // tp_size
+            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {shard_size=}")
+            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {output_dim=}")
+
             start_idx = tp_rank * shard_size
 
             loaded_weight = loaded_weight.narrow(output_dim, start_idx,
@@ -689,6 +708,8 @@ class QKVParallelLinear(ColumnParallelLinear):
                  params_dtype: Optional[torch.dtype] = None,
                  quant_config: Optional[QuantizationConfig] = None,
                  prefix: str = ""):
+        print(f"hosseins QKVParallelLinear -> __init__: {hidden_size=}")
+        
         self.hidden_size = hidden_size
         self.head_size = head_size
         self.total_num_heads = total_num_heads
