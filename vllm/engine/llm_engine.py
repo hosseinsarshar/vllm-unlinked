@@ -215,6 +215,7 @@ class LLMEngine:
         mm_registry: MultiModalRegistry = MULTIMODAL_REGISTRY,
         use_cached_outputs: bool = False,
     ) -> None:
+        print(f"hosseins: LLMEngine -> __init__() {vllm_config=}")
 
         self.vllm_config = vllm_config
         self.model_config = vllm_config.model_config
@@ -406,6 +407,8 @@ class LLMEngine:
         self.seq_id_to_seq_group: Dict[str, SequenceGroupBase] = {}
 
     def _initialize_kv_caches(self) -> None:
+        print(f"hosseins: LLMEngine -> _initialize_kv_caches()")
+
         """Initialize the KV cache in the worker(s).
 
         The workers will determine the number of blocks in both the GPU cache
@@ -434,6 +437,7 @@ class LLMEngine:
     @classmethod
     def _get_executor_cls(cls,
                           engine_config: VllmConfig) -> Type[ExecutorBase]:
+        print(f"hosseins: LLMEngine -> _get_executor_cls(): {engine_config=}")
         distributed_executor_backend = (
             engine_config.parallel_config.distributed_executor_backend)
         # Initialize the cluster and specify the executor class.
@@ -500,6 +504,9 @@ class LLMEngine:
         else:
             from vllm.executor.gpu_executor import GPUExecutor
             executor_class = GPUExecutor
+
+        print(f"hosseins: LLMEngine -> _get_executor_cls(): {executor_class=}")
+        
         return executor_class
 
     @classmethod
@@ -509,6 +516,9 @@ class LLMEngine:
         usage_context: UsageContext = UsageContext.ENGINE_CONTEXT,
         stat_loggers: Optional[Dict[str, StatLoggerBase]] = None,
     ) -> "LLMEngine":
+        print(f"hosseins: LLMEngine -> from_engine_args(): {engine_args=}")
+        print(f"hosseins: LLMEngine -> from_engine_args(): {usage_context=}")
+
         """Creates an LLM engine from the engine arguments."""
         # Create the engine configs.
         engine_config = engine_args.create_engine_config(usage_context)
@@ -539,6 +549,7 @@ class LLMEngine:
         self,
         group_type: Type[_G] = BaseTokenizerGroup,
     ) -> _G:
+        print(f"hosseins: LLMEngine -> get_tokenizer_group() {group_type=}")
         tokenizer_group = self.tokenizer
 
         if tokenizer_group is None:
@@ -555,9 +566,11 @@ class LLMEngine:
         self,
         lora_request: Optional[LoRARequest] = None,
     ) -> AnyTokenizer:
+        print(f"hosseins: LLMEngine -> get_tokenizer()")
         return self.get_tokenizer_group().get_lora_tokenizer(lora_request)
 
     def _init_tokenizer(self) -> BaseTokenizerGroup:
+        print(f"hosseins: LLMEngine -> _init_tokenizer()")
         return init_tokenizer_from_configs(
             model_config=self.model_config,
             scheduler_config=self.scheduler_config,
@@ -565,6 +578,7 @@ class LLMEngine:
             lora_config=self.lora_config)
 
     def _verify_args(self) -> None:
+        print(f"hosseins: LLMEngine -> _verify_args()")
         self.model_config.verify_with_parallel_config(self.parallel_config)
         self.cache_config.verify_with_parallel_config(self.parallel_config)
         if self.lora_config:
@@ -586,6 +600,7 @@ class LLMEngine:
         trace_headers: Optional[Mapping[str, str]] = None,
         priority: int = 0,
     ) -> Optional[SequenceGroup]:
+        print(f"hosseins: LLMEngine -> _add_processed_request()")
         """Add a processed request to the engine's request pool.
         return the created sequence group.
         """
@@ -1001,6 +1016,7 @@ class LLMEngine:
     def _process_model_outputs(self,
                                ctx: SchedulerContext,
                                request_id: Optional[str] = None) -> None:
+        print(f"hosseins: LLMEngine -> _process_model_outputs()")
         """Apply the model output to the sequences in the scheduled seq groups
         and return responses.
 
@@ -1222,6 +1238,7 @@ class LLMEngine:
             self, output: List[SamplerOutput],
             seq_group_metadata_list: List[SequenceGroupMetadata],
             scheduled_seq_groups: List[ScheduledSequenceGroup]) -> None:
+        print(f"hosseins: LLMEngine -> _advance_to_next_step()")
         """Given model output from a single run, append the tokens to the
         sequences. This is normally done inside output processor, but it is
         required if the worker is to perform async forward pass to next step.
@@ -1263,6 +1280,7 @@ class LLMEngine:
                     seq.append_token_id(sample.output_token, sample.logprobs)
 
     def step(self) -> List[Union[RequestOutput, PoolingRequestOutput]]:
+        print(f"hosseins: LLMEngine -> step()")
         """Performs one decoding iteration and returns newly generated results.
 
         .. figure:: https://i.imgur.com/sv2HssD.png
@@ -1470,6 +1488,7 @@ class LLMEngine:
     def _has_remaining_steps(
         self, seq_group_metadata_list: Optional[List[SequenceGroupMetadata]]
     ) -> bool:
+        print(f"hosseins: LLMEngine -> _has_remaining_steps()")
         if (not self.scheduler_config.is_multi_step
                 or not seq_group_metadata_list):
             return False

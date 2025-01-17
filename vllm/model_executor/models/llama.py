@@ -98,6 +98,8 @@ class LlamaMLP(nn.Module):
         self.act_fn = SiluAndMul()
 
     def forward(self, x):
+        # print(f"hossein: LlamaMLP -> forward")
+
         x, _ = self.gate_up_proj(x)
         x = self.act_fn(x)
         x, _ = self.down_proj(x)
@@ -214,6 +216,7 @@ class LlamaAttention(nn.Module):
         kv_cache: torch.Tensor,
         attn_metadata: AttentionMetadata,
     ) -> torch.Tensor:
+        # print(f"hossein: LlamaAttention -> forward")
         qkv, _ = self.qkv_proj(hidden_states)
         q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
         q, k = self.rotary_emb(positions, q, k)
@@ -282,6 +285,7 @@ class LlamaDecoderLayer(nn.Module):
         residual: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         # Self Attention
+        # print(f"hossein: LlamaDecoderLayer -> forward")
         if residual is None:
             residual = hidden_states
             hidden_states = self.input_layernorm(hidden_states)
@@ -309,6 +313,7 @@ class LlamaModel(nn.Module):
                  prefix: str = "",
                  layer_type: Type[LlamaDecoderLayer] = LlamaDecoderLayer):
         super().__init__()
+        print(f"hossein: LlamaModel -> __init__ : [{vllm_config=}]")
 
         config = vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
@@ -360,6 +365,7 @@ class LlamaModel(nn.Module):
         intermediate_tensors: Optional[IntermediateTensors],
         inputs_embeds: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, IntermediateTensors]:
+        # print(f"hossein: LlamaModel -> forward")
         if get_pp_group().is_first_rank:
             if inputs_embeds is not None:
                 hidden_states = inputs_embeds
@@ -388,6 +394,8 @@ class LlamaModel(nn.Module):
 
     def load_weights(self, weights: Iterable[Tuple[str,
                                                    torch.Tensor]]) -> Set[str]:
+        print(f"hosseins: LlamaModel -> load_weights")
+        
         stacked_params_mapping = [
             # (param_name, shard_name, shard_id)
             (".qkv_proj", ".q_proj", "q"),
@@ -445,6 +453,7 @@ class LlamaModel(nn.Module):
                 param = params_dict[name]
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
+                
                 weight_loader(param, loaded_weight)
             loaded_params.add(name)
         return loaded_params
@@ -455,6 +464,10 @@ class LlamaModel(nn.Module):
     def load_kv_cache_scales(self, quantization_param_path: str) -> None:
         tp_size = get_tensor_model_parallel_world_size()
         tp_rank = get_tensor_model_parallel_rank()
+
+        print(f"hosseins: LlamaModel -> load_kv_cache_scales - {tp_size=}")
+        print(f"hosseins: LlamaModel -> load_kv_cache_scales - {tp_rank=}")
+
         for layer_idx, scaling_factor in kv_cache_scales_loader(
                 quantization_param_path, tp_rank, tp_size,
                 self.config.num_hidden_layers,
@@ -569,9 +582,13 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
             self.model.make_empty_intermediate_tensors)
 
     def _init_model(self, vllm_config: VllmConfig, prefix: str = ""):
+        print(f"hosseins: LlamaForCausalLM -> _init_model - {vllm_config=}")
+
         return LlamaModel(vllm_config=vllm_config, prefix=prefix)
 
     def get_input_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
+        print(f"hosseins: LlamaForCausalLM -> get_input_embeddings - {input_ids=}")
+        
         return self.model.get_input_embeddings(input_ids)
 
     def forward(
@@ -583,6 +600,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         intermediate_tensors: Optional[IntermediateTensors] = None,
         inputs_embeds: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, IntermediateTensors]:
+        # print(f"hossein: LlamaForCausalLM -> forward")
         model_output = self.model(input_ids, positions, kv_caches,
                                   attn_metadata, intermediate_tensors,
                                   inputs_embeds)
@@ -604,6 +622,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
 
     def load_weights(self, weights: Iterable[Tuple[str,
                                                    torch.Tensor]]) -> Set[str]:
+        print(f"hosseins: LlamaForCausalLM -> load_weights")
         loader = AutoWeightsLoader(
             self,
             skip_prefixes=(["lm_head."]
@@ -614,6 +633,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
             for name, loaded_weight in weights)
 
     def load_kv_cache_scales(self, quantization_param_path: str) -> None:
+        print(f"hosseins: LlamaForCausalLM -> load_kv_cache_scales {quantization_param_path=}")
         self.model.load_kv_cache_scales(quantization_param_path)
 
     # This function is used to remap the mistral format as
@@ -623,7 +643,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         name: str,
         loaded_weight: torch.Tensor,
     ) -> Tuple[str, torch.Tensor]:
-
+        print(f"hosseins: LlamaForCausalLM -> maybe_remap_mistral {name=}")
         def permute(w: torch.Tensor, n_heads: int):
             attn_in = self.config.head_dim * n_heads
             attn_out = self.config.hidden_size

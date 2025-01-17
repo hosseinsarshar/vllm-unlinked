@@ -116,6 +116,7 @@ async def lifespan(app: FastAPI):
 @asynccontextmanager
 async def build_async_engine_client(
         args: Namespace) -> AsyncIterator[EngineClient]:
+    print(f'hosseins: api_server.py build_async_engine_client() {args=}')
 
     # Context manager to handle engine_client lifecycle
     # Ensures everything is shutdown and cleaned up on error/exit
@@ -131,6 +132,8 @@ async def build_async_engine_client_from_engine_args(
     engine_args: AsyncEngineArgs,
     disable_frontend_multiprocessing: bool = False,
 ) -> AsyncIterator[EngineClient]:
+    # print("***************** set_trace build_async_engine_client_from_engine_args *****************")
+    # pdb.set_trace()
     """
     Create EngineClient, either:
         - in-process using the AsyncLLMEngine Directly
@@ -138,11 +141,11 @@ async def build_async_engine_client_from_engine_args(
 
     Returns the Client or None if the creation failed.
     """
-
+    print(f"hosseins: api_server.py build_async_engine_client_from_engine_args() {engine_args=}")
     # AsyncLLMEngine.
     if (MQLLMEngineClient.is_unsupported_config(engine_args)
             or envs.VLLM_USE_V1 or disable_frontend_multiprocessing):
-
+        print(f"hosseins: build_async_engine_client_from_engine_args() -> if (MQLLMEngineClient.is_unsupported_config .. ")
         engine_client: Optional[EngineClient] = None
         try:
             engine_client = AsyncLLMEngine.from_engine_args(
@@ -155,6 +158,7 @@ async def build_async_engine_client_from_engine_args(
 
     # MQLLMEngine.
     else:
+        print(f"hosseins: build_async_engine_client_from_engine_args() -> else if PROMETHEUS_MULTIPROC_DIR not in")
         if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
             # Make TemporaryDirectory for prometheus multiprocessing
             # Note: global TemporaryDirectory will be automatically
@@ -164,6 +168,7 @@ async def build_async_engine_client_from_engine_args(
             os.environ[
                 "PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir.name
         else:
+            print(f"hosseins: build_async_engine_client_from_engine_args() -> else")
             logger.warning(
                 "Found PROMETHEUS_MULTIPROC_DIR was set by user. "
                 "This directory must be wiped between vLLM runs or "
@@ -762,10 +767,12 @@ def create_server_socket(addr: Tuple[str, int]) -> socket.socket:
 
     return sock
 
+import pdb
 
 async def run_server(args, **uvicorn_kwargs) -> None:
     logger.info("vLLM API server version %s", VLLM_VERSION)
     logger.info("args: %s", args)
+    print('hosseins: api_server.py run_server')
 
     if args.tool_parser_plugin and len(args.tool_parser_plugin) > 3:
         ToolParserManager.import_tool_parser(args.tool_parser_plugin)
@@ -820,6 +827,7 @@ async def run_server(args, **uvicorn_kwargs) -> None:
 if __name__ == "__main__":
     # NOTE(simon):
     # This section should be in sync with vllm/scripts.py for CLI entrypoints.
+    print('hosseins: api_server.py __main__')
     parser = FlexibleArgumentParser(
         description="vLLM OpenAI-Compatible RESTful API server.")
     parser = make_arg_parser(parser)
