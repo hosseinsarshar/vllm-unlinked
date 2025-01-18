@@ -74,9 +74,6 @@ class LlamaMLP(nn.Module):
         # pdb.set_trace()
 
         print(f"hossein: LlamaMLP -> __init__ : [{hidden_size=}]")
-        print(f"hossein: LlamaMLP -> __init__ : [{intermediate_size=}]")
-        print(f"hossein: LlamaMLP -> __init__ : [{bias=}]")
-        print(f"hossein: LlamaMLP -> __init__ : [{quant_config=}]")
 
         self.gate_up_proj = MergedColumnParallelLinear(
             input_size=hidden_size,
@@ -127,14 +124,10 @@ class LlamaAttention(nn.Module):
         print(f"hosseins: LlamaAttention -> __init__() : [{layer_idx=}]")
         self.hidden_size = hidden_size
         tp_size = get_tensor_model_parallel_world_size()
-        print(f"hosseins: LlamaAttention -> __init__() : [{tp_size=}]")
         self.total_num_heads = num_heads
         assert self.total_num_heads % tp_size == 0
         self.num_heads = self.total_num_heads // tp_size
         self.total_num_kv_heads = num_kv_heads
-
-        print(f"hosseins: LlamaAttention -> __init__() : [{self.total_num_kv_heads=}]")
-
 
         if self.total_num_kv_heads >= tp_size:
             # Number of KV heads is greater than TP size, so we partition
@@ -354,6 +347,7 @@ class LlamaModel(nn.Module):
                 ["hidden_states", "residual"], config.hidden_size))
 
     def get_input_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
+        print(f"hosseins: LlamaModel -> get_input_embeddings : [{len(input_ids)=}]")
         return self.embed_tokens(input_ids)
 
     def forward(
@@ -453,7 +447,6 @@ class LlamaModel(nn.Module):
                 param = params_dict[name]
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
-                
                 weight_loader(param, loaded_weight)
             loaded_params.add(name)
         return loaded_params
@@ -466,7 +459,6 @@ class LlamaModel(nn.Module):
         tp_rank = get_tensor_model_parallel_rank()
 
         print(f"hosseins: LlamaModel -> load_kv_cache_scales - {tp_size=}")
-        print(f"hosseins: LlamaModel -> load_kv_cache_scales - {tp_rank=}")
 
         for layer_idx, scaling_factor in kv_cache_scales_loader(
                 quantization_param_path, tp_rank, tp_size,
@@ -611,12 +603,14 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         hidden_states: torch.Tensor,
         sampling_metadata: SamplingMetadata,
     ) -> Optional[torch.Tensor]:
+        print(f"hosseins: LlamaForCausalLM -> compute_logits")
         logits = self.logits_processor(self.lm_head, hidden_states,
                                        sampling_metadata)
         return logits
 
     def sample(self, logits: torch.Tensor,
                sampling_metadata: SamplingMetadata) -> Optional[SamplerOutput]:
+        print(f"hosseins: LlamaForCausalLM -> sample")
         next_tokens = self.sampler(logits, sampling_metadata)
         return next_tokens
 

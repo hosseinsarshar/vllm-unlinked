@@ -541,13 +541,16 @@ def maybe_offload_to_cpu(module: torch.nn.Module) -> torch.nn.Module:
 
     return module
 
-
 def make_layers(
     num_hidden_layers: int,
     layer_fn: LayerFn,
     prefix: str,
 ) -> Tuple[int, int, torch.nn.ModuleList]:
-    """Make a list of layers with the given layer function, taking
+    print(f"hosseins: utils.py -> make_layers() [{num_hidden_layers=}]")
+    print(f"hosseins: utils.py -> make_layers() [{layer_fn=}]")
+    print(f"hosseins: utils.py -> make_layers() [{prefix=}]")
+    """
+    Make a list of layers with the given layer function, taking
     pipeline parallelism into account.
     """
     from vllm.distributed.parallel_state import get_pp_group
@@ -555,6 +558,7 @@ def make_layers(
     start_layer, end_layer = get_pp_indices(num_hidden_layers,
                                             get_pp_group().rank_in_group,
                                             get_pp_group().world_size)
+
     modules = torch.nn.ModuleList(
         [PPMissingLayer() for _ in range(start_layer)] + [
             maybe_offload_to_cpu(layer_fn(prefix=f"{prefix}.{idx}"))

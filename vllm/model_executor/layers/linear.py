@@ -37,6 +37,7 @@ WEIGHT_LOADER_V2_SUPPORTED = [
 
 print("hosseins: linear.py is called")
 def adjust_marlin_shard(param, shard_size, shard_offset):
+    print(f"hosseins: linear.py -> adjust_marlin_shard() [{shard_size=}] - [{shard_offset=}]")
     marlin_tile_size = getattr(param, "marlin_tile_size", None)
     if marlin_tile_size is None:
         return shard_size, shard_offset
@@ -48,6 +49,7 @@ def adjust_bitsandbytes_4bit_shard(param: Parameter,
                                    shard_offsets: Dict[str, Tuple[int, int]],
                                    loaded_shard_id: str) -> Tuple[int, int]:
     """Adjust the quantization offsets and sizes for BitsAndBytes sharding."""
+    print(f"hosseins: linear.py -> adjust_bitsandbytes_4bit_shard()")
 
     total, _ = shard_offsets["total"]
     orig_offset, orig_size = shard_offsets[loaded_shard_id]
@@ -66,6 +68,7 @@ def adjust_scalar_to_fused_array(param, loaded_weight, shard_id):
     one of the shards on disk. Here, we slice the param based on 
     the shard_id for loading.
     """
+    print(f"hosseins: linear.py -> adjust_scalar_to_fused_array() [{shard_id=}]")
     qkv_idxs = {"q": 0, "k": 1, "v": 2}
 
     if isinstance(shard_id, str):
@@ -124,6 +127,7 @@ class UnquantizedLinearMethod(LinearMethodBase):
                        output_partition_sizes: List[int], input_size: int,
                        output_size: int, params_dtype: torch.dtype,
                        **extra_weight_attrs):
+        print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{output_size=}]")
         weight = Parameter(torch.empty(sum(output_partition_sizes),
                                        input_size_per_partition,
                                        dtype=params_dtype),
@@ -136,6 +140,7 @@ class UnquantizedLinearMethod(LinearMethodBase):
               layer: torch.nn.Module,
               x: torch.Tensor,
               bias: Optional[torch.Tensor] = None) -> torch.Tensor:
+        print(f"hosseins: UnquantizedLinearMethod -> apply()")
 
         return F.linear(x, layer.weight, bias)
 
@@ -161,6 +166,7 @@ class LinearBase(torch.nn.Module):
         quant_config: Optional[QuantizationConfig] = None,
         prefix: str = "",
     ):
+        print(f"hosseins: LinearBase -> __init__() [{input_size=}]")
         super().__init__()
 
         # Keep input parameters
@@ -209,7 +215,8 @@ class ReplicatedLinear(LinearBase):
                          params_dtype,
                          quant_config,
                          prefix=prefix)
-
+        print(f"hosseins: ReplicatedLinear -> __init__()")
+        
         # All the linear layer supports quant method.
         assert self.quant_method is not None
         self.quant_method.create_weights(self,
@@ -230,6 +237,7 @@ class ReplicatedLinear(LinearBase):
             self.register_parameter("bias", None)
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
+        print(f"hosseins: ReplicatedLinear -> weight_loader()")
         # If the weight on disk does not have a shape, give it one
         # (such scales for AutoFp8).
         if len(loaded_weight.shape) == 0:
@@ -248,6 +256,7 @@ class ReplicatedLinear(LinearBase):
         return output, output_bias
 
     def extra_repr(self) -> str:
+        print(f"hosseins: ReplicatedLinear -> extra_repr()")
         s = f"in_features={self.input_size}"
         s += f", output_features={self.output_size}"
         s += f", bias={self.bias is not None}"
@@ -290,6 +299,7 @@ class ColumnParallelLinear(LinearBase):
                  prefix: str = ""):
         super().__init__(input_size, output_size, skip_bias_add, params_dtype,
                          quant_config, prefix)
+        print(f"hosseins: ColumnParallelLinear -> __init__()")
 
         self.gather_output = gather_output
 
@@ -330,6 +340,7 @@ class ColumnParallelLinear(LinearBase):
             self.register_parameter("bias", None)
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
+        print(f"hosseins: ColumnParallelLinear -> weight_loader()")
         tp_rank = get_tensor_model_parallel_rank()
         output_dim = getattr(param, "output_dim", None)
 
@@ -367,6 +378,7 @@ class ColumnParallelLinear(LinearBase):
         param_data.copy_(loaded_weight)
 
     def weight_loader_v2(self, param: Parameter, loaded_weight: torch.Tensor):
+        print(f"hosseins: ColumnParallelLinear -> weight_loader_v2()")
         # Special case for loading scales off disk, which often do not
         # have a shape (such as in the case of AutoFP8).
         if len(loaded_weight.shape) == 0:
@@ -389,6 +401,7 @@ class ColumnParallelLinear(LinearBase):
         return output, output_bias
 
     def extra_repr(self) -> str:
+        print(f"hosseins: ColumnParallelLinear -> extra_repr()")
         s = f"in_features={self.input_size}"
         s += f", output_features={self.output_size_per_partition}"
         s += f", bias={self.bias is not None}"
@@ -431,7 +444,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                  prefix: str = ""):
         self.output_sizes = output_sizes
         tp_size = get_tensor_model_parallel_world_size()
-        print(f"hosseins MergedColumnParallelLinear -> __init__: {tp_size=}")
+        print(f"hosseins: MergedColumnParallelLinear -> __init__: {tp_size=}")
 
         assert all(output_size % tp_size == 0 for output_size in output_sizes)
         super().__init__(input_size=input_size,
@@ -447,16 +460,13 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                       param: Parameter,
                       loaded_weight: torch.Tensor,
                       loaded_shard_id: Optional[int] = None):
+        print(f"hosseins: MergedColumnParallelLinear -> weight_loader")
 
         # Special case for GGUF
         # initialize GGUF param after we know the quantize type
         # breakpoint()
         is_gguf_weight = getattr(param, "is_gguf_weight", False)
         is_gguf_weight_type = getattr(param, "is_gguf_weight_type", False)
-
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader {loaded_shard_id=}")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader {is_gguf_weight=}")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader {is_gguf_weight_type=}")
         
         if is_gguf_weight_type:
             param.data[loaded_shard_id].copy_(loaded_weight)
@@ -467,14 +477,9 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
             tp_size = get_tensor_model_parallel_world_size()
             tp_rank = get_tensor_model_parallel_rank()
 
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {output_dim=}")
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {tp_rank=}")
-
 
             output_dim = getattr(param, "output_dim", None)
             shard_size = loaded_weight.size(output_dim) // tp_size
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {shard_size=}")
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader {output_dim=}")
 
             start_idx = tp_rank * shard_size
 
@@ -597,6 +602,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
+        print(f"hosseins: MergedColumnParallelLinear -> _load_fused_module_from_checkpoint()")
         """
         Handle special case for models where MLP layers are already
         fused on disk. In this case, we have no shard id. This function
@@ -632,6 +638,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                          param: BasevLLMParameter,
                          loaded_weight: torch.Tensor,
                          loaded_shard_id: Optional[int] = None):
+        print(f"hosseins: MergedColumnParallelLinear -> weight_loader_v2()")
         if loaded_shard_id is None:
             if isinstance(param, PerTensorScaleParameter):
                 param.load_merged_column_weight(loaded_weight=loaded_weight,
@@ -708,7 +715,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                  params_dtype: Optional[torch.dtype] = None,
                  quant_config: Optional[QuantizationConfig] = None,
                  prefix: str = ""):
-        print(f"hosseins QKVParallelLinear -> __init__: {hidden_size=}")
+        print(f"hosseins: QKVParallelLinear -> __init__: {hidden_size=}")
         
         self.hidden_size = hidden_size
         self.head_size = head_size
@@ -745,6 +752,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                          prefix=prefix)
 
     def _get_shard_offset_mapping(self, loaded_shard_id: str):
+        print(f"hosseins: QKVParallelLinear -> _get_shard_offset_mapping()")
         shard_offset_mapping = {
             "q": 0,
             "k": self.num_heads * self.head_size,
@@ -754,6 +762,7 @@ class QKVParallelLinear(ColumnParallelLinear):
         return shard_offset_mapping.get(loaded_shard_id)
 
     def _get_shard_size_mapping(self, loaded_shard_id: str):
+        print(f"hosseins: QKVParallelLinear -> _get_shard_size_mapping()")
         shard_size_mapping = {
             "q": self.num_heads * self.head_size,
             "k": self.num_kv_heads * self.head_size,
@@ -763,6 +772,7 @@ class QKVParallelLinear(ColumnParallelLinear):
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
+        print(f"hosseins: QKVParallelLinear -> _load_fused_module_from_checkpoint()")
         """
         Handle special case for models where QKV layers are already 
         fused on disk. In this case, we have no shard id. This function
@@ -801,6 +811,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                          param: BasevLLMParameter,
                          loaded_weight: torch.Tensor,
                          loaded_shard_id: Optional[str] = None):
+        print(f"hosseins: QKVParallelLinear -> weight_loader_v2()")
         if loaded_shard_id is None:  # special case for certain models
             if isinstance(param, PerTensorScaleParameter):
                 param.load_qkv_weight(loaded_weight=loaded_weight, shard_id=0)
@@ -827,6 +838,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                       param: Parameter,
                       loaded_weight: torch.Tensor,
                       loaded_shard_id: Optional[str] = None):
+        print(f"hosseins: QKVParallelLinear -> weight_loader()")
 
         # Special case for GGUF
         # initialize GGUF param after we know the quantize type
@@ -1038,6 +1050,7 @@ class RowParallelLinear(LinearBase):
                  reduce_results: bool = True,
                  quant_config: Optional[QuantizationConfig] = None,
                  prefix: str = ""):
+        print(f"hosseins: RowParallelLinear -> __init__()")
         super().__init__(input_size, output_size, skip_bias_add, params_dtype,
                          quant_config, prefix)
 
@@ -1075,6 +1088,7 @@ class RowParallelLinear(LinearBase):
             self.register_parameter("bias", None)
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
+        print(f"hosseins: RowParallelLinear -> weight_loader()")
         tp_rank = get_tensor_model_parallel_rank()
         tp_size = get_tensor_model_parallel_world_size()
         input_dim = getattr(param, "input_dim", None)
@@ -1113,6 +1127,7 @@ class RowParallelLinear(LinearBase):
     def weight_loader_v2(self, param: BasevLLMParameter,
                          loaded_weight: torch.Tensor):
 
+        print(f"hosseins: RowParallelLinear -> weight_loader_v2()")
         # Special case for loading scales off disk, which often do not
         # have a shape (such as in the case of AutoFP8).
         if len(loaded_weight.shape) == 0:
@@ -1148,6 +1163,7 @@ class RowParallelLinear(LinearBase):
         return output, output_bias
 
     def extra_repr(self) -> str:
+        print(f"hosseins: RowParallelLinear -> extra_repr()")
         s = f"input_features={self.input_size_per_partition}"
         s += f", output_features={self.output_size}"
         s += f", bias={self.bias is not None}"
