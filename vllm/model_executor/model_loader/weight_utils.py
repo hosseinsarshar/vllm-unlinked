@@ -359,6 +359,7 @@ def np_cache_weights_iterator(
     model_name_or_path: str, cache_dir: Optional[str], hf_folder: str,
     hf_weights_files: List[str]
 ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+    print(f"hosseins: weight_utils.py -> np_cache_weights_iterator()")
     """Iterate over the weights in the model np files.
 
     Will dump the model weights to numpy files if they are not already dumped.
@@ -403,6 +404,7 @@ def np_cache_weights_iterator(
 def safetensors_weights_iterator(
     hf_weights_files: List[str]
 ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+    print(f"hosseins: weight_utils.py -> safetensors_weights_iterator()")
     """Iterate over the weights in the model safetensor files."""
     enable_tqdm = not torch.distributed.is_initialized(
     ) or torch.distributed.get_rank() == 0
@@ -417,10 +419,11 @@ def safetensors_weights_iterator(
                 param = f.get_tensor(name)
                 yield name, param
 
-
+ 
 def runai_safetensors_weights_iterator(
     hf_weights_files: List[str]
 ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+    print(f"hosseins: weight_utils.py -> runai_safetensors_weights_iterator()")
     """Iterate over the weights in the model safetensor files."""
     enable_tqdm = not torch.distributed.is_initialized(
     ) or torch.distributed.get_rank() == 0
@@ -439,6 +442,7 @@ def pt_weights_iterator(
     hf_weights_files: List[str]
 ) -> Generator[Tuple[str, torch.Tensor], None, None]:
     """Iterate over the weights in the model bin/pt files."""
+    print(f"hosseins: weight_utils.py -> pt_weights_iterator()")
     enable_tqdm = not torch.distributed.is_initialized(
     ) or torch.distributed.get_rank() == 0
     for bin_file in tqdm(
@@ -455,6 +459,7 @@ def pt_weights_iterator(
 
 def get_gguf_extra_tensor_names(
         gguf_file: str, gguf_to_hf_name_map: Dict[str, str]) -> List[str]:
+    print(f"hosseins: weight_utils.py -> get_gguf_extra_tensor_names()")
     reader = gguf.GGUFReader(gguf_file)
     expected_gguf_keys = set(gguf_to_hf_name_map.keys())
     exact_gguf_keys = set([tensor.name for tensor in reader.tensors])
@@ -469,6 +474,7 @@ def gguf_quant_weights_iterator(
     Iterate over the quant weights in the model gguf files and convert
     them to torch tensors
     """
+    print(f"hosseins: weight_utils.py -> gguf_quant_weights_iterator()")
 
     reader = gguf.GGUFReader(gguf_file)
 
@@ -497,6 +503,7 @@ def gguf_quant_weights_iterator(
 def kv_cache_scales_loader(
         filename: str, tp_rank: int, tp_size: int, num_hidden_layers: int,
         model_type: Optional[str]) -> Iterable[Tuple[int, float]]:
+    print(f"hosseins: weight_utils.py -> kv_cache_scales_loader()")
     """
     A simple utility to read in KV cache scaling factors that have been
     previously serialized to disk. Used by the model to populate the appropriate
@@ -544,6 +551,7 @@ def convert_pyslice_to_tensor(x: Any) -> torch.Tensor:
     tensor with these more complicated operators, we need to convert to
     tensor first.
     """
+    print(f"hosseins: weight_utils.py -> convert_pyslice_to_tensor()")
     if not isinstance(x, torch.Tensor):
         x = x[:]
     return x
@@ -552,6 +560,7 @@ def convert_pyslice_to_tensor(x: Any) -> torch.Tensor:
 def default_weight_loader(param: torch.Tensor,
                           loaded_weight: torch.Tensor) -> None:
     """Default weight loader."""
+    print(f"hosseins: weight_utils.py -> default_weight_loader()")
     try:
         if param.numel() == 1 and loaded_weight.numel() == 1:
             # Sometimes scalar values aren't considered tensors with shapes
@@ -573,6 +582,7 @@ def default_weight_loader(param: torch.Tensor,
 def row_parallel_weight_loader(param: torch.Tensor,
                                loaded_weight: torch.Tensor) -> None:
     """Load weights that are row-parallelized."""
+    print(f"hosseins: weight_utils.py -> row_parallel_weight_loader()")
     tp_rank = get_tensor_model_parallel_rank()
     shard_dim = 0 if param.dim() != 1 else None
 
@@ -589,8 +599,10 @@ LoaderFunction = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 
 def sharded_weight_loader(shard_axis: int) -> LoaderFunction:
     """Create a weight loader that shards the weights along the given axis"""
+    print(f"hosseins: weight_utils.py -> sharded_weight_loader()")
 
     def loader(param: torch.Tensor, loaded_weight: torch.Tensor) -> None:
+        print(f"hosseins: weight_utils.py -> sharded_weight_loader() loader()")
         tp_rank = get_tensor_model_parallel_rank()
 
         shard_size = param.data.shape[shard_axis]
@@ -606,9 +618,11 @@ def composed_weight_loader(
         loader: LoaderFunction, fn: Callable[[torch.Tensor],
                                              torch.Tensor]) -> LoaderFunction:
     """Create a weight loader that post-processes the weights after loading"""
+    print(f"hosseins: weight_utils.py -> composed_weight_loader()")
 
     def composed_loader(param: torch.Tensor,
                         loaded_weight: torch.Tensor) -> None:
+        print(f"hosseins: weight_utils.py -> composed_weight_loader() composed_loader()")
         loader(param, loaded_weight)
         param.data.copy_(fn(param))
         return
@@ -622,6 +636,7 @@ def initialize_dummy_weights(
     high: float = 1e-3,
     seed: int = 1234,
 ) -> None:
+    print(f"hosseins: weight_utils.py -> initialize_dummy_weights()")
     """Initialize model weights with random values.
 
     The model weights must be randomly initialized for accurate performance
@@ -655,6 +670,7 @@ def initialize_dummy_weights(
 
 
 def maybe_remap_kv_scale_name(name: str, params_dict: dict) -> Optional[str]:
+    print(f"hosseins: weight_utils.py -> maybe_remap_kv_scale_name()")
     """Remap the name of FP8 k/v_scale parameters.
 
     This function handles the remapping of FP8 k/v_scale parameter names.

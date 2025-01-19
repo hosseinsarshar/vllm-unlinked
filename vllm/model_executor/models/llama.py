@@ -58,6 +58,8 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, extract_layer_index,
 import pdb
 
 
+
+
 class LlamaMLP(nn.Module):
 
     def __init__(
@@ -73,7 +75,7 @@ class LlamaMLP(nn.Module):
         # print("***************** REACHED pdb.set_trace() *****************")
         # pdb.set_trace()
 
-        print(f"hossein: LlamaMLP -> __init__ : [{hidden_size=}]")
+        print(f"hosseins: LlamaMLP -> __init__ : [{hidden_size=}]")
 
         self.gate_up_proj = MergedColumnParallelLinear(
             input_size=hidden_size,
@@ -297,7 +299,7 @@ class LlamaDecoderLayer(nn.Module):
         return hidden_states, residual
 
 
-@support_torch_compile
+# @support_torch_compile
 class LlamaModel(nn.Module):
 
     def __init__(self,
@@ -306,7 +308,7 @@ class LlamaModel(nn.Module):
                  prefix: str = "",
                  layer_type: Type[LlamaDecoderLayer] = LlamaDecoderLayer):
         super().__init__()
-        print(f"hossein: LlamaModel -> __init__ : [{vllm_config=}]")
+        print(f"hosseins: LlamaModel -> __init__ : [{vllm_config=}]")
 
         config = vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
@@ -337,6 +339,9 @@ class LlamaModel(nn.Module):
                                       prefix=prefix),
             prefix=f"{prefix}.layers",
         )
+        print(f"hosseins: LlamaModel -> __init__ [{self.start_layer=}]")
+        print(f"hosseins: LlamaModel -> __init__ [{self.end_layer=}]")
+        print(f"hosseins: LlamaModel -> __init__ [{self.layers=}]")
         if get_pp_group().is_last_rank:
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         else:
@@ -481,6 +486,35 @@ class LlamaModel(nn.Module):
                                    "factor attribute!")
 
 
+def initialize_spmd():
+    import torch_xla.core.xla_model as xm
+    import torch_xla.runtime as xr
+    import torch_xla.distributed.spmd as xs
+    from torch_xla.distributed.spmd import Mesh
+    import numpy as np
+
+    xr.use_spmd()
+
+    num_devices = xr.global_runtime_device_count()
+    mesh_shape = (num_devices, 1)
+    device_ids = np.array(range(num_devices))
+    mesh = Mesh(device_ids, mesh_shape, ('data', 'model'))
+
+    return mesh
+
+def get_mesh():
+    # return None
+    global mesh
+    if mesh is None:
+        print('hosseins: llama.py creating mesh')
+        mesh = initialize_spmd()
+    else:
+        print('hosseins: llama.py returning mesh')
+        return mesh
+
+mesh = None
+
+
 class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
     packed_modules_mapping = {
         "qkv_proj": ["q_proj", "k_proj", "v_proj"],
@@ -531,6 +565,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         print(f"hosseins: LlamaForCausalLM -> __init__() {vllm_config=}")
         super().__init__()
+        mesh = get_mesh()
         config = vllm_config.model_config.hf_config
         quant_config = vllm_config.quant_config
         lora_config = vllm_config.lora_config

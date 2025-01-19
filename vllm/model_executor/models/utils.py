@@ -564,6 +564,9 @@ def make_layers(
             maybe_offload_to_cpu(layer_fn(prefix=f"{prefix}.{idx}"))
             for idx in range(start_layer, end_layer)
         ] + [PPMissingLayer() for _ in range(end_layer, num_hidden_layers)])
+    
+    print(f"hosseins: utils.py -> make_layers() [{modules=}]")
+    
     return start_layer, end_layer, modules
 
 

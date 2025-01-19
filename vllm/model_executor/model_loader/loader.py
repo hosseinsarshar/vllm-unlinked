@@ -105,6 +105,7 @@ def _initialize_model(
     *,
     prefix: str = "",
 ) -> nn.Module:
+    print("hosseins: loader.py _initialize_model()")
     """Initialize a model with the given configurations."""
     model_config = vllm_config.model_config
     model_class, _ = get_model_architecture(model_config)
@@ -182,6 +183,7 @@ class DefaultModelLoader(BaseModelLoader):
         """Whether .pt weights can be used."""
 
     def __init__(self, load_config: LoadConfig):
+        print("hosseins: DefaultModelLoader __init__()")
         super().__init__(load_config)
         if load_config.model_loader_extra_config:
             raise ValueError(f"Model loader extra config is not supported for "
@@ -189,6 +191,7 @@ class DefaultModelLoader(BaseModelLoader):
 
     def _maybe_download_from_modelscope(
             self, model: str, revision: Optional[str]) -> Optional[str]:
+        print("hosseins: DefaultModelLoader _maybe_download_from_modelscope()")
         """Download model from ModelScope hub if VLLM_USE_MODELSCOPE is True.
 
         Returns the path to the downloaded model, or None if the model is not
@@ -218,6 +221,7 @@ class DefaultModelLoader(BaseModelLoader):
         revision: Optional[str],
         fall_back_to_pt: bool,
     ) -> Tuple[str, List[str], bool]:
+        print("hosseins: DefaultModelLoader _prepare_weights()")
         """Prepare weights for the model.
 
         If the model is not local, it will be downloaded."""
@@ -295,6 +299,7 @@ class DefaultModelLoader(BaseModelLoader):
     def _get_weights_iterator(
             self, source: "Source"
     ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+        print("hosseins: DefaultModelLoader _get_weights_iterator()")
         """Get an iterator for the model weights based on the load format."""
         hf_folder, hf_weights_files, use_safetensors = self._prepare_weights(
             source.model_or_path, source.revision, source.fall_back_to_pt)
@@ -317,12 +322,12 @@ class DefaultModelLoader(BaseModelLoader):
             # not too many ops are accumulated in the XLA program.
             import torch_xla.core.xla_model as xm
 
-            def _xla_weights_iterator(iterator: Generator):
-                for weights in iterator:
-                    yield weights
-                    xm.mark_step()
+            # def _xla_weights_iterator(iterator: Generator):
+            #     for weights in iterator:
+            #         yield weights
+            #         xm.mark_step()
 
-            weights_iterator = _xla_weights_iterator(weights_iterator)
+            # weights_iterator = _xla_weights_iterator(weights_iterator)
 
         # Apply the prefix.
         return ((source.prefix + name, tensor)
@@ -333,6 +338,7 @@ class DefaultModelLoader(BaseModelLoader):
         model_config: ModelConfig,
         model: nn.Module,
     ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+        print("hosseins: DefaultModelLoader _get_all_weights()")
         primary_weights = DefaultModelLoader.Source(
             model_config.model,
             model_config.revision,
@@ -350,11 +356,13 @@ class DefaultModelLoader(BaseModelLoader):
             yield from self._get_weights_iterator(source)
 
     def download_model(self, model_config: ModelConfig) -> None:
+        print("hosseins: DefaultModelLoader download_model()")
         self._prepare_weights(model_config.model,
                               model_config.revision,
                               fall_back_to_pt=True)
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: DefaultModelLoader load_model()")
         device_config = vllm_config.device_config
         model_config = vllm_config.model_config
 
@@ -401,6 +409,7 @@ class DummyModelLoader(BaseModelLoader):
         pass  # Nothing to download
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: DummyModelLoader load_model()")
         device_config = vllm_config.device_config
         model_config = vllm_config.model_config
         with set_default_torch_dtype(model_config.dtype):
@@ -429,6 +438,7 @@ class TensorizerLoader(BaseModelLoader):
 
     def __init__(self, load_config: LoadConfig):
         super().__init__(load_config)
+        print("hosseins: TensorizerLoader __init__()")
         if isinstance(load_config.model_loader_extra_config, TensorizerConfig):
             self.tensorizer_config = load_config.model_loader_extra_config
         else:
@@ -449,6 +459,7 @@ class TensorizerLoader(BaseModelLoader):
         self,
         vllm_config: VllmConfig,
     ) -> nn.Module:
+        print("hosseins: TensorizerLoader _load_model_serialized_cpu()")
         """Load a serialized model with tensorizer to the CPU.
 
         This is only necessary when the model isn't vLLM-tensorized (see
@@ -469,6 +480,7 @@ class TensorizerLoader(BaseModelLoader):
         self,
         vllm_config: VllmConfig,
     ) -> nn.Module:
+        print("hosseins: TensorizerLoader _load_model_serialized()")
         """Load a serialized model with tensorizer.
 
         Expects a vLLM-tensorized model. See the
@@ -498,6 +510,7 @@ class TensorizerLoader(BaseModelLoader):
             pass
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: TensorizerLoader load_model()")
         model_config = vllm_config.model_config
         parallel_config = vllm_config.parallel_config
         self._verify_config(model_config, parallel_config)
@@ -536,6 +549,7 @@ class ShardedStateLoader(BaseModelLoader):
 
     def __init__(self, load_config: LoadConfig):
         super().__init__(load_config)
+        print("hosseins: ShardedStateLoader __init__()")
         extra_config = ({} if load_config.model_loader_extra_config is None
                         else load_config.model_loader_extra_config.copy())
         self.pattern = extra_config.pop("pattern", self.DEFAULT_PATTERN)
@@ -547,6 +561,7 @@ class ShardedStateLoader(BaseModelLoader):
     @staticmethod
     def _filter_subtensors(
         tensors: Dict[str, torch.Tensor], ) -> Dict[str, torch.Tensor]:
+        print("hosseins: ShardedStateLoader _filter_subtensors()")
         """
         Filter out all tensors that share the same memory or a subset of the
         memory of another tensor.
@@ -582,6 +597,7 @@ class ShardedStateLoader(BaseModelLoader):
 
     def _prepare_weights(self, model_name_or_path: str,
                          revision: Optional[str]):
+        print("hosseins: ShardedStateLoader _prepare_weights()")
         if os.path.isdir(model_name_or_path):
             return model_name_or_path
         else:
@@ -598,6 +614,7 @@ class ShardedStateLoader(BaseModelLoader):
         self._prepare_weights(model_config.model, model_config.revision)
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: ShardedStateLoader load_model()")
         device_config = vllm_config.device_config
         model_config = vllm_config.model_config
         from safetensors.torch import safe_open
@@ -660,6 +677,7 @@ class ShardedStateLoader(BaseModelLoader):
         pattern: Optional[str] = None,
         max_size: Optional[int] = None,
     ) -> None:
+        print("hosseins: ShardedStateLoader save_model()")
         from safetensors.torch import save_file
 
         from vllm.distributed import get_tensor_model_parallel_rank
@@ -698,6 +716,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
     possible_config_file_names = ["adapter_config.json"]
 
     def __init__(self, load_config: LoadConfig):
+        print("hosseins: BitsAndBytesModelLoader __init__()")
         super().__init__(load_config)
 
         # Save the module names without sharding.
@@ -716,6 +735,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         allowed_patterns: List[str],
         revision: Optional[str] = None,
     ) -> Tuple[List[str], str]:
+        print("hosseins: BitsAndBytesModelLoader _get_weight_files()")
         """Retrieve weight files. Download the files if necessary.
 
         Return the weight files and the file pattern."""
@@ -747,6 +767,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
 
     def _prepare_weights(self, model_name_or_path: str,
                          revision: Optional[str]) -> Tuple[List[str], bool]:
+        print("hosseins: BitsAndBytesModelLoader _prepare_weights()")
         """Prepare weight files for the model."""
 
         allowed_patterns = ["*.safetensors", "*.bin", "*.pt"]
@@ -765,6 +786,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         return hf_weights_files, matched_pattern == "*.safetensors"
 
     def _hf_weight_iter(self, hf_weights_files, use_safetensors: bool):
+        print("hosseins: BitsAndBytesModelLoader _hf_weight_iter()")
         if use_safetensors:
             iterator = safetensors_weights_iterator(hf_weights_files)
         else:
@@ -781,6 +803,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         load_8bit: bool,
     ) -> Tuple[Generator[Tuple[str, torch.Tensor], None, None], Dict[str,
                                                                      Any]]:
+        print("hosseins: BitsAndBytesModelLoader _get_quantized_weights_iterator()")
         """Get an iterator to the model weights with bitsandbytes quantization,
         as well as the quantization state dictionary."""
 
@@ -1012,6 +1035,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
 
     def _load_weights(self, model_config: ModelConfig,
                       model: nn.Module) -> None:
+        print("hosseins: BitsAndBytesModelLoader _load_weights()")
         if not hasattr(model, "load_weights"):
             raise AttributeError(
                 "The required method 'load_weights' is not defined in class"
@@ -1158,6 +1182,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         self._prepare_weights(model_config.model, model_config.revision)
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: BitsAndBytesModelLoader load_model()")
         device_config = vllm_config.device_config
         model_config = vllm_config.model_config
         with set_default_torch_dtype(model_config.dtype):
@@ -1178,17 +1203,20 @@ class GGUFModelLoader(BaseModelLoader):
 
     def __init__(self, load_config: LoadConfig):
         super().__init__(load_config)
+        print("hosseins: GGUFModelLoader __init__()")
         if load_config.model_loader_extra_config:
             raise ValueError(f"Model loader extra config is not supported for "
                              f"load format {load_config.load_format}")
 
     def _prepare_weights(self, model_name_or_path: str):
+        print("hosseins: GGUFModelLoader _prepare_weights()")
         if os.path.isfile(model_name_or_path):
             return model_name_or_path
         else:
             raise ValueError(f"{model_name_or_path} is not a file.")
 
     def _get_gguf_weights_map(self, model_config: ModelConfig):
+        print("hosseins: GGUFModelLoader _get_gguf_weights_map()")
         """
         GGUF uses this naming convention for their tensors from HF checkpoint:
         `blk.N.BB.weight` and `blk.N.BB.bias`
@@ -1225,6 +1253,7 @@ class GGUFModelLoader(BaseModelLoader):
     def _get_weights_iterator(
         self, model_name_or_path: str, gguf_to_hf_name_map: Dict[str, str]
     ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+        print("hosseins: GGUFModelLoader _get_weights_iterator()")
         return gguf_quant_weights_iterator(model_name_or_path,
                                            gguf_to_hf_name_map)
 
@@ -1232,6 +1261,7 @@ class GGUFModelLoader(BaseModelLoader):
         self._prepare_weights(model_config.model)
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: GGUFModelLoader load_model()")
         device_config = vllm_config.device_config
         model_config = vllm_config.model_config
         local_model_path = self._prepare_weights(model_config.model)
@@ -1257,6 +1287,7 @@ class RunaiModelStreamerLoader(BaseModelLoader):
 
     def __init__(self, load_config: LoadConfig):
         super().__init__(load_config)
+        print("hosseins: RunaiModelStreamerLoader __init__()")
         if load_config.model_loader_extra_config:
             extra_config = load_config.model_loader_extra_config
 
@@ -1279,6 +1310,7 @@ class RunaiModelStreamerLoader(BaseModelLoader):
 
     def _prepare_weights(self, model_name_or_path: str,
                          revision: Optional[str]) -> List[str]:
+        print("hosseins: RunaiModelStreamerLoader _prepare_weights()")
         """Prepare weights for the model.
 
         If the model is not local, it will be downloaded."""
@@ -1318,15 +1350,18 @@ class RunaiModelStreamerLoader(BaseModelLoader):
     def _get_weights_iterator(
             self, model_or_path: str,
             revision: str) -> Generator[Tuple[str, torch.Tensor], None, None]:
+        print("hosseins: RunaiModelStreamerLoader _get_weights_iterator()")
         """Get an iterator for the model weights based on the load format."""
         hf_weights_files = self._prepare_weights(model_or_path, revision)
         return runai_safetensors_weights_iterator(hf_weights_files)
 
     def download_model(self, model_config: ModelConfig) -> None:
         """Download model if necessary"""
+        print("hosseins: RunaiModelStreamerLoader download_model()")
         self._prepare_weights(model_config.model, model_config.revision)
 
     def load_model(self, vllm_config: VllmConfig) -> nn.Module:
+        print("hosseins: RunaiModelStreamerLoader load_model()")
         """Perform streaming of the model to destination"""
         device_config = vllm_config.device_config
         model_config = vllm_config.model_config
