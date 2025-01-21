@@ -57,6 +57,9 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, extract_layer_index,
                     maybe_prefix)
 import pdb
 
+from vllm.distributed.utils import get_mesh
+
+from vllm.utils import get_tpu_info, get_cpu_memory_util
 
 
 
@@ -298,7 +301,7 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = self.mlp(hidden_states)
         return hidden_states, residual
 
-
+# hosseins: removed @support_torch_compile
 # @support_torch_compile
 class LlamaModel(nn.Module):
 
@@ -353,6 +356,11 @@ class LlamaModel(nn.Module):
 
     def get_input_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
         print(f"hosseins: LlamaModel -> get_input_embeddings : [{len(input_ids)=}]")
+        tpu_activities = get_tpu_info(0)
+        cpu_mem_util = get_cpu_memory_util()
+        print(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
+        print(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
+
         return self.embed_tokens(input_ids)
 
     def forward(
@@ -393,7 +401,7 @@ class LlamaModel(nn.Module):
 
     def load_weights(self, weights: Iterable[Tuple[str,
                                                    torch.Tensor]]) -> Set[str]:
-        print(f"hosseins: LlamaModel -> load_weights")
+        print(f"hosseins: LlamaModel -> load_weights()")
         
         stacked_params_mapping = [
             # (param_name, shard_name, shard_id)
@@ -405,7 +413,11 @@ class LlamaModel(nn.Module):
         ]
         params_dict = dict(self.named_parameters())
         loaded_params: Set[str] = set()
+        print(f"hosseins: LlamaModel -> load_weights() [{params_dict.keys()=}]")
         for name, loaded_weight in weights:
+            print(f"hosseins: LlamaModel -> load_weights() [{name=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
+            
             if "rotary_emb.inv_freq" in name:
                 continue
             if ("rotary_emb.cos_cached" in name
@@ -454,6 +466,21 @@ class LlamaModel(nn.Module):
                                         default_weight_loader)
                 weight_loader(param, loaded_weight)
             loaded_params.add(name)
+            print(f"hosseins: LlamaModel -> load_weights() [{weight_name=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{type(loaded_weight)=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{param_name=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{type(param)=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
+            tpu_activities = get_tpu_info(0)
+            cpu_mem_util = get_cpu_memory_util()
+            print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
+
+        print(f"hosseins: LlamaModel -> load_weights() [{loaded_params=}]")
         return loaded_params
 
     # If this function is called, it should always initialize KV cache scale
@@ -484,36 +511,6 @@ class LlamaModel(nn.Module):
             else:
                 raise RuntimeError("Self attention has no KV cache scaling "
                                    "factor attribute!")
-
-
-def initialize_spmd():
-    import torch_xla.core.xla_model as xm
-    import torch_xla.runtime as xr
-    import torch_xla.distributed.spmd as xs
-    from torch_xla.distributed.spmd import Mesh
-    import numpy as np
-
-    xr.use_spmd()
-
-    num_devices = xr.global_runtime_device_count()
-    mesh_shape = (num_devices, 1)
-    device_ids = np.array(range(num_devices))
-    mesh = Mesh(device_ids, mesh_shape, ('data', 'model'))
-
-    return mesh
-
-def get_mesh():
-    # return None
-    global mesh
-    if mesh is None:
-        print('hosseins: llama.py creating mesh')
-        mesh = initialize_spmd()
-    else:
-        print('hosseins: llama.py returning mesh')
-        return mesh
-
-mesh = None
-
 
 class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
     packed_modules_mapping = {
@@ -627,7 +624,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         intermediate_tensors: Optional[IntermediateTensors] = None,
         inputs_embeds: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, IntermediateTensors]:
-        # print(f"hossein: LlamaForCausalLM -> forward")
+        print(f"hossein: LlamaForCausalLM -> forward")
         model_output = self.model(input_ids, positions, kv_caches,
                                   attn_metadata, intermediate_tensors,
                                   inputs_embeds)
@@ -641,6 +638,9 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         print(f"hosseins: LlamaForCausalLM -> compute_logits")
         logits = self.logits_processor(self.lm_head, hidden_states,
                                        sampling_metadata)
+        
+        print(f"hosseins: LlamaForCausalLM -> compute_logits() [{logits.shape=}]")
+
         return logits
 
     def sample(self, logits: torch.Tensor,
@@ -651,7 +651,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
 
     def load_weights(self, weights: Iterable[Tuple[str,
                                                    torch.Tensor]]) -> Set[str]:
-        print(f"hosseins: LlamaForCausalLM -> load_weights")
+        print(f"hosseins: LlamaForCausalLM -> load_weights()")
         loader = AutoWeightsLoader(
             self,
             skip_prefixes=(["lm_head."]

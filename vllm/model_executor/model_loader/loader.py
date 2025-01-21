@@ -51,7 +51,7 @@ from vllm.model_executor.utils import set_weight_attrs
 from vllm.platforms import current_platform
 from vllm.transformers_utils.s3_utils import glob as s3_glob
 from vllm.transformers_utils.utils import is_s3
-from vllm.utils import is_pin_memory_available
+from vllm.utils import is_pin_memory_available, get_tpu_info, get_cpu_memory_util
 
 
 @contextmanager
@@ -371,9 +371,20 @@ class DefaultModelLoader(BaseModelLoader):
             with target_device:
                 model = _initialize_model(vllm_config=vllm_config)
 
+            tpu_utilization = get_tpu_info(0)
+            cpu_mem_util = get_cpu_memory_util()
+            print(f"hosseins: DefaultModelLoader load_model() 1 [{tpu_utilization}]")
+            print(f"hosseins: DefaultModelLoader load_model() 1 [{cpu_mem_util}]")
+
             weights_to_load = {name for name, _ in model.named_parameters()}
             loaded_weights = model.load_weights(
                 self._get_all_weights(model_config, model))
+            
+            tpu_utilization = get_tpu_info(0)
+            cpu_mem_util = get_cpu_memory_util()
+            print(f"hosseins: DefaultModelLoader load_model() 2 [{tpu_utilization}]")
+            print(f"hosseins: DefaultModelLoader load_model() 2 [{cpu_mem_util}]")
+
             # We only enable strict check for non-quantized models
             # that have loaded weights tracking currently.
             if model_config.quantization is None and loaded_weights is not None:

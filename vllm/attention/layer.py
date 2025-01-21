@@ -44,6 +44,7 @@ class Attention(nn.Module):
         attn_type: str = AttentionType.DECODER,
     ) -> None:
         super().__init__()
+        print(f"hosseins: Attention -> __init__()")
         if per_layer_sliding_window is not None:
             # per-layer sliding window
             sliding_window = per_layer_sliding_window
@@ -155,6 +156,7 @@ class Attention(nn.Module):
                                                     kv_cache, self.layer_name)
 
     def extra_repr(self) -> str:
+        print(f"hosseins: Attention -> extra_repr()")
         s = f"head_size={self.impl.head_size}"  # type: ignore
         s += f", num_heads={self.impl.num_heads}"  # type: ignore
         s += f", num_kv_heads={self.impl.num_kv_heads}"  # type: ignore
@@ -174,6 +176,7 @@ class MultiHeadAttention(nn.Module):
         num_kv_heads: Optional[int] = None,
     ):
         super().__init__()
+        print(f"hosseins: MultiHeadAttention -> __init__()")
         self.num_heads = num_heads
         self.head_size = head_size
         self.scale = scale
@@ -233,6 +236,7 @@ def unified_attention(
     kv_cache: torch.Tensor,
     layer_name: str,
 ) -> torch.Tensor:
+    print(f"hosseins: layer.py -> unified_attention()")
     forward_context: ForwardContext = get_forward_context()
     attn_metadata = forward_context.dynamic_forward_context
     self = forward_context.static_forward_context[layer_name]
@@ -247,6 +251,7 @@ def unified_attention_fake(
     kv_cache: torch.Tensor,
     layer_name: str,
 ) -> torch.Tensor:
+    print(f"hosseins: layer.py -> unified_attention_fake()")
     return torch.empty_like(query).contiguous()
 
 
@@ -267,6 +272,7 @@ def unified_attention_with_output(
     kv_cache: torch.Tensor,
     layer_name: str,
 ) -> None:
+    print(f"hosseins: layer.py -> unified_attention_with_output()")
     forward_context: ForwardContext = get_forward_context()
     attn_metadata = forward_context.dynamic_forward_context
     self = forward_context.static_forward_context[layer_name]

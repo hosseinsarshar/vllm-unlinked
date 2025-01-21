@@ -87,6 +87,7 @@ class AutoWeightsLoader:
         skip_prefixes: Optional[List[str]] = None,
         ignore_unexpected_prefixes: Optional[List[str]] = None,
     ) -> None:
+        print("hosseins: AutoWeightsLoader -> __init__()")
         super().__init__()
 
         self.module = module
@@ -231,6 +232,7 @@ class AutoWeightsLoader:
         *,
         mapper: Optional[WeightsMapper] = None,
     ) -> Set[str]:
+        print(f"hosseins: AutoWeightsLoader -> load_weights()")
         if mapper is not None:
             weights = mapper.apply(weights)
 

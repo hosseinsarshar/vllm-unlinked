@@ -225,3 +225,40 @@ class StatelessProcessGroup:
             world_size=world_size,
             store=store,
             data_expiration_seconds=data_expiration_seconds)
+
+
+def initialize_spmd():
+    global mesh
+    import torch_xla.core.xla_model as xm
+    import torch_xla.runtime as xr
+    import torch_xla.distributed.spmd as xs
+    from torch_xla.distributed.spmd import Mesh
+    import numpy as np
+
+    xr.use_spmd()
+
+    num_devices = xr.global_runtime_device_count()
+    mesh_shape = (num_devices, 1)
+    device_ids = np.array(range(num_devices))
+    _mesh = Mesh(device_ids, mesh_shape, ('model', 'data')) # 0 column and 1 is row as nn.Linear is `x @ W.T`
+    mesh = _mesh
+    return _mesh
+
+def get_mesh():
+    # return None
+    global mesh
+    if mesh is None:
+        print('hosseins: llama.py creating mesh')
+        mesh = initialize_spmd()
+    else:
+        print('hosseins: llama.py returning mesh')
+        return mesh
+
+mesh = None
+
+def get_col_parallel_partition_spec():
+    return ('model', None)
+
+def get_row_parallel_partition_spec():
+    return (None, 'data')
+

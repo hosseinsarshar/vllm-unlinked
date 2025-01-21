@@ -34,6 +34,7 @@ except ImportError:
         "runai_model_streamer")  # type: ignore[assignment]
     SafetensorsStreamer = runai_model_streamer.placeholder_attr(
         "SafetensorsStreamer")
+from vllm.utils import get_tpu_info, get_cpu_memory_util
 
 logger = init_logger(__name__)
 
@@ -414,6 +415,10 @@ def safetensors_weights_iterator(
             disable=not enable_tqdm,
             bar_format=_BAR_FORMAT,
     ):
+        tpu_utilization = get_tpu_info(0)
+        cpu_mem_util = get_cpu_memory_util()
+        print(f"hosseins: weight_utils.py -> safetensors_weights_iterator() [{tpu_utilization}]")
+        print(f"hosseins: weight_utils.py -> safetensors_weights_iterator() [{cpu_mem_util}]")
         with safe_open(st_file, framework="pt") as f:
             for name in f.keys():  # noqa: SIM118
                 param = f.get_tensor(name)
