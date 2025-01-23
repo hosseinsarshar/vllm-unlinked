@@ -61,6 +61,8 @@ from vllm.distributed.utils import get_mesh
 
 from vllm.utils import get_tpu_info, get_cpu_memory_util
 
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+import torch_xla.distributed.spmd as xs
 
 
 class LlamaMLP(nn.Module):
@@ -312,7 +314,7 @@ class LlamaModel(nn.Module):
                  layer_type: Type[LlamaDecoderLayer] = LlamaDecoderLayer):
         super().__init__()
         print(f"hosseins: LlamaModel -> __init__ : [{vllm_config=}]")
-
+        # self.mesh = get_mesh()
         config = vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
         quant_config = vllm_config.quant_config
@@ -358,8 +360,8 @@ class LlamaModel(nn.Module):
         print(f"hosseins: LlamaModel -> get_input_embeddings : [{len(input_ids)=}]")
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
-        print(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
+        # print(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
+        # print(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
 
         return self.embed_tokens(input_ids)
 
@@ -413,10 +415,18 @@ class LlamaModel(nn.Module):
         ]
         params_dict = dict(self.named_parameters())
         loaded_params: Set[str] = set()
-        print(f"hosseins: LlamaModel -> load_weights() [{params_dict.keys()=}]")
+        # print(f"hosseins: LlamaModel -> load_weights() [{params_dict.keys()=}]")
+        
+        # for key in params_dict:
+        #     print(f'hosseins: LlamaModel -> load_weights() [{key=}]')
+        #     print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].shape=}]')
+        #     print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].device=}]')
+        #     # print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].data=}]')
+
         for name, loaded_weight in weights:
             print(f"hosseins: LlamaModel -> load_weights() [{name=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
             
             if "rotary_emb.inv_freq" in name:
                 continue
@@ -428,6 +438,10 @@ class LlamaModel(nn.Module):
             if scale_name := get_compressed_tensors_cache_scale(name):
                 # Loading kv cache scales for compressed-tensors quantization
                 param = params_dict[scale_name]
+                print(f"hosseins: LlamaModel -> load_weights() [{scale_name=}]")
+                print(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
+                print(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
+
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
                 loaded_weight = loaded_weight[0]
@@ -446,6 +460,7 @@ class LlamaModel(nn.Module):
                     continue
 
                 param = params_dict[name]
+                print(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}] [{shard_id=}]")
                 weight_loader = param.weight_loader
                 weight_loader(param, loaded_weight, shard_id)
                 break
@@ -462,16 +477,21 @@ class LlamaModel(nn.Module):
                     continue
 
                 param = params_dict[name]
+                print(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}]")
+
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
                 weight_loader(param, loaded_weight)
             loaded_params.add(name)
+            
+            # xs.mark_sharding(param, self.mesh, get_col_parallel_partition_spec())
             print(f"hosseins: LlamaModel -> load_weights() [{weight_name=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{type(param)=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
+            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape==param.shape=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{type(loaded_weight)=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{param_name=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{type(param)=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
@@ -562,7 +582,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         print(f"hosseins: LlamaForCausalLM -> __init__() {vllm_config=}")
         super().__init__()
-        mesh = get_mesh()
+        # mesh = get_mesh()
         config = vllm_config.model_config.hf_config
         quant_config = vllm_config.quant_config
         lora_config = vllm_config.lora_config
@@ -571,6 +591,8 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
 
         self.model = self._init_model(vllm_config=vllm_config,
                                       prefix=maybe_prefix(prefix, "model"))
+
+        print(f"hosseins: LlamaForCausalLM -> __init__() {get_pp_group().is_last_rank=}")
 
         if get_pp_group().is_last_rank:
             self.unpadded_vocab_size = config.vocab_size

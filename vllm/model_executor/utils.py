@@ -13,6 +13,7 @@ def set_weight_attrs(
     weight: torch.Tensor,
     weight_attrs: Optional[Dict[str, Any]],
 ):
+    print(f"hosseins: model_executor.utils -> set_weight_attrs() [{[x for x in weight_attrs]}]")
     """Set attributes on a weight tensor.
 
     This method is used to set attributes on a weight tensor. This method

@@ -205,3 +205,4 @@ shellcheck*/
 
 script.sh
 trace.txt
+output.log

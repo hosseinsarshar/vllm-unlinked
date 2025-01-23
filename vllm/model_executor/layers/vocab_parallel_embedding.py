@@ -18,7 +18,8 @@ import torch_xla.distributed.spmd as xs
 DEFAULT_VOCAB_PADDING_SIZE = 64
 
 from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
-
+import torch_xla.distributed.spmd as xs
+from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
 class UnquantizedEmbeddingMethod(QuantizeMethodBase):
     """Unquantized method for embeddings."""
@@ -358,6 +359,7 @@ class VocabParallelEmbedding(torch.nn.Module):
 
         # If the parameter is a gguf weight, then load it directly.
         if getattr(param, "is_gguf_weight_type", None):
+            # hosseins: this is also not being called in llama-8b on TPU
             param.data.copy_(loaded_weight)
             param.weight_type = loaded_weight.item()
             return
@@ -371,6 +373,7 @@ class VocabParallelEmbedding(torch.nn.Module):
         # be copied onto all gpus (e.g. g_idx for act_order gptq).
         if output_dim is None:
             assert param.data.shape == loaded_weight.shape
+            # hosseins: this is also not being called in llama-8b on TPU
             param.data.copy_(loaded_weight)
             return
 
@@ -407,7 +410,13 @@ class VocabParallelEmbedding(torch.nn.Module):
             param[:loaded_weight.shape[0]].data.copy_(loaded_weight)
             param[loaded_weight.shape[0]:].data.fill_(0)
 
+        self.mesh = get_mesh()
+        
         xs.mark_sharding(param, self.mesh, get_row_parallel_partition_spec())
+        print("hosseins: after sharding param")
+        generated_table = visualize_tensor_sharding(param, use_color=False)
+        print(generated_table)
+
 
     def forward(self, input_):
         if self.tp_size > 1:

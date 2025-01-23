@@ -277,10 +277,10 @@ class LLMEngine:
 
         self.model_executor = executor_class(vllm_config=vllm_config, )
 
-        tpu_activities = get_tpu_info(0)
-        cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: LLMEngine -> __init__() 1 [{tpu_activities=}]")
-        print(f"hosseins: LLMEngine -> __init__() 1 [{cpu_mem_util=}]")
+        # tpu_activities = get_tpu_info(0)
+        # cpu_mem_util = get_cpu_memory_util()
+        # print(f"hosseins: LLMEngine -> __init__() 1 [{tpu_activities=}]")
+        # print(f"hosseins: LLMEngine -> __init__() 1 [{cpu_mem_util=}]")
 
         if self.model_config.runner_type != "pooling":
             self._initialize_kv_caches()

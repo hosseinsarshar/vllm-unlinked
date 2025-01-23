@@ -44,6 +44,10 @@ logger = init_logger(__name__)
 # system reboots, so users will not complain about annoying lock files
 temp_dir = tempfile.gettempdir()
 
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+import torch_xla.distributed.spmd as xs
+from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
+
 
 def enable_hf_transfer():
     """automatically activates hf_transfer
@@ -583,6 +587,9 @@ def default_weight_loader(param: torch.Tensor,
         # debug weight loading issues.
         raise
 
+    print(f"hosseins: weight_utils.py -> default_weight_loader() [{param.data.shape}]")
+    print(f"hosseins: weight_utils.py -> default_weight_loader() [{param.data.device}]")
+
 
 def row_parallel_weight_loader(param: torch.Tensor,
                                loaded_weight: torch.Tensor) -> None:
@@ -596,7 +603,17 @@ def row_parallel_weight_loader(param: torch.Tensor,
         start_idx = tp_rank * shard_size
         loaded_weight = loaded_weight.narrow(shard_dim, start_idx, shard_size)
 
-    return default_weight_loader(param, loaded_weight)
+    ret_o = default_weight_loader(param, loaded_weight)
+
+    mesh = get_mesh()
+
+    xs.mark_sharding(param, mesh, get_col_parallel_partition_spec())
+    print("hosseins: after sharding param")
+    generated_table = visualize_tensor_sharding(param, use_color=False)
+    print(generated_table)
+
+
+    return ret_o
 
 
 LoaderFunction = Callable[[torch.Tensor, torch.Tensor], torch.Tensor]

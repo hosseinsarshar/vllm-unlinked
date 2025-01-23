@@ -28,6 +28,7 @@ from vllm.utils import get_tpu_info, get_cpu_memory_util
 
 from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
 import torch_xla.distributed.spmd as xs
+from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
 logger = init_logger(__name__)
 
@@ -133,6 +134,7 @@ class UnquantizedLinearMethod(LinearMethodBase):
                        output_size: int, params_dtype: torch.dtype,
                        **extra_weight_attrs):
         print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{output_size=}]")
+        # print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{extra_weight_attrs=}]")
         weight = Parameter(torch.empty(sum(output_partition_sizes),
                                        input_size_per_partition,
                                        dtype=params_dtype),
@@ -255,6 +257,7 @@ class ReplicatedLinear(LinearBase):
             loaded_weight = loaded_weight.reshape(1)
 
         assert param.size() == loaded_weight.size()
+        # hosseins: this is not called in llama-8b
         param.data.copy_(loaded_weight)
 
     def forward(
@@ -389,6 +392,7 @@ class ColumnParallelLinear(LinearBase):
             loaded_weight = loaded_weight.reshape(1)
 
         assert param_data.shape == loaded_weight.shape
+        # hosseins: this is also not being called in llama-8b
         param_data.copy_(loaded_weight)
 
     def weight_loader_v2(self, param: Parameter, loaded_weight: torch.Tensor):
@@ -496,6 +500,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         # print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{param=}]")
         
         if is_gguf_weight_type:
+            # hosseins: this is also not being called in llama-8b on TPU
             param.data[loaded_shard_id].copy_(loaded_weight)
             param.shard_weight_type[loaded_shard_id] = loaded_weight.item()
             return
@@ -528,6 +533,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         needs_scalar_to_array = getattr(param, "needs_scalar_to_array", False)
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{output_dim=}]")
+        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 before narrow [{param_data.shape=}]")
 
         if loaded_shard_id is None:
             # Loaded weight is already fused on disk (mlp).
@@ -538,6 +544,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                         param_data, loaded_weight, 0)
 
                 assert param_data.shape == loaded_weight.shape
+                # hosseins: this is also not being called in llama-8b on TPU
                 param_data.copy_(loaded_weight)
                 return
             current_shard_offset = 0
@@ -611,6 +618,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
             # no need to narrow here
             print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{output_dim=}]")
             print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{start_idx=}]")
+            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{shard_offset=}]")
             print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{shard_size=}]")
             if not use_bitsandbytes_4bit:
                 loaded_weight = loaded_weight.narrow(output_dim, start_idx,
@@ -637,6 +645,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
+        # param_data._sync(param)
 
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.device=}]")
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.device=}]")
@@ -645,7 +654,10 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        xs.mark_sharding(param_data, self.mesh, get_col_parallel_partition_spec())
+        xs.mark_sharding(param, self.mesh, get_col_parallel_partition_spec())
+        print("hosseins: after sharding param")
+        generated_table = visualize_tensor_sharding(param, use_color=False)
+        print(generated_table)
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
@@ -904,6 +916,7 @@ class QKVParallelLinear(ColumnParallelLinear):
 
         if is_gguf_weight_type and loaded_shard_id is not None:
             idx_map = {"q": 0, "k": 1, "v": 2}
+            # hosseins: this is also not being called in llama-8b on TPU
             param.data[idx_map[loaded_shard_id]].copy_(loaded_weight)
             param.shard_weight_type[loaded_shard_id] = loaded_weight.item()
             return
@@ -947,6 +960,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                         param_data, loaded_weight, 0)
 
                 assert param_data.shape == loaded_weight.shape
+                # hosseins: this is also not being called in llama-8b on TPU
                 param_data.copy_(loaded_weight)
                 return
             shard_offsets = [
@@ -1093,7 +1107,10 @@ class QKVParallelLinear(ColumnParallelLinear):
         print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        xs.mark_sharding(param_data, self.mesh, get_col_parallel_partition_spec())
+        xs.mark_sharding(param, self.mesh, get_col_parallel_partition_spec())
+        print("hosseins: after sharding param")
+        generated_table = visualize_tensor_sharding(param, use_color=False)
+        print(generated_table)
 
 
 class RowParallelLinear(LinearBase):
@@ -1232,7 +1249,10 @@ class RowParallelLinear(LinearBase):
         print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        xs.mark_sharding(param_data, self.mesh, get_row_parallel_partition_spec())
+        xs.mark_sharding(param, self.mesh, get_row_parallel_partition_spec())
+        print("hosseins: after sharding param")
+        generated_table = visualize_tensor_sharding(param, use_color=False)
+        print(generated_table)
 
 
     def weight_loader_v2(self, param: BasevLLMParameter,

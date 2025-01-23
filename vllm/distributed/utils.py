@@ -239,8 +239,9 @@ def initialize_spmd():
 
     num_devices = xr.global_runtime_device_count()
     mesh_shape = (num_devices, 1)
+    print(f"hosseins: mesh_shape: [{mesh_shape=}]")
     device_ids = np.array(range(num_devices))
-    _mesh = Mesh(device_ids, mesh_shape, ('model', 'data')) # 0 column and 1 is row as nn.Linear is `x @ W.T`
+    _mesh = Mesh(device_ids, mesh_shape, ('data', 'model')) # 0 column and 1 is row as nn.Linear is `x @ W.T`
     mesh = _mesh
     return _mesh
 
@@ -257,8 +258,10 @@ def get_mesh():
 mesh = None
 
 def get_col_parallel_partition_spec():
-    return ('model', None)
+    return ('data', 'model')
+    # return ('model', 'data')
 
 def get_row_parallel_partition_spec():
-    return (None, 'data')
+    return ('model', 'data')
+    # return ('data', 'model')
 

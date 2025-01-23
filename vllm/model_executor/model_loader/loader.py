@@ -379,6 +379,7 @@ class DefaultModelLoader(BaseModelLoader):
             weights_to_load = {name for name, _ in model.named_parameters()}
             loaded_weights = model.load_weights(
                 self._get_all_weights(model_config, model))
+            print(f"hosseins: DefaultModelLoader load_model() 1 [{len(loaded_weights)} weights loaded]")
             
             tpu_utilization = get_tpu_info(0)
             cpu_mem_util = get_cpu_memory_util()
