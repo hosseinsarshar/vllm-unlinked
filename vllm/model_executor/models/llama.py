@@ -57,12 +57,44 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, extract_layer_index,
                     maybe_prefix)
 import pdb
 
-from vllm.distributed.utils import get_mesh
-
 from vllm.utils import get_tpu_info, get_cpu_memory_util
 
-from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+import numpy as np
+
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
 import torch_xla.distributed.spmd as xs
+
+
+TORCH_TO_NUMPY_DTYPE = {
+    torch.float16: 'float16',
+    torch.bfloat16: 'uint16',  # bfloat16 uses 2 bytes, but not directly available in NumPy
+    torch.float32: 'float32',
+    torch.float64: 'float64',
+    torch.int8: 'int8',
+    torch.int16: 'int16',
+    torch.int32: 'int32',
+    torch.int64: 'int64',
+    torch.bool: 'bool'
+}
+
+
+def estimate_tensor_memory(shape, dtype):
+
+    if isinstance(dtype, torch.dtype):
+        if dtype not in TORCH_TO_NUMPY_DTYPE:
+            raise ValueError(f"Unsupported PyTorch dtype: {dtype}")
+        dtype = TORCH_TO_NUMPY_DTYPE[dtype]
+
+    # Get the number of elements in the tensor
+    num_elements = np.prod(shape)
+
+    # Get the size of each element in bytes
+    dtype_size = np.dtype(dtype).itemsize
+
+    # Calculate total memory consumption
+    memory_bytes = num_elements * dtype_size
+
+    return memory_bytes
 
 
 class LlamaMLP(nn.Module):
@@ -416,12 +448,18 @@ class LlamaModel(nn.Module):
         params_dict = dict(self.named_parameters())
         loaded_params: Set[str] = set()
         # print(f"hosseins: LlamaModel -> load_weights() [{params_dict.keys()=}]")
-        
-        # for key in params_dict:
-        #     print(f'hosseins: LlamaModel -> load_weights() [{key=}]')
-        #     print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].shape=}]')
-        #     print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].device=}]')
-        #     # print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].data=}]')
+        total_bytes = 0
+        for key in params_dict:
+            print(f'hosseins: LlamaModel -> load_weights() [{key=}]')
+            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].shape=}]')
+            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].device=}]')
+            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].dtype=}]')
+            param_bytes = estimate_tensor_memory(params_dict[key].shape, params_dict[key].dtype)
+            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{param_bytes=}]')
+            total_bytes += param_bytes
+            # print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].data=}]')
+
+        print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{total_bytes=}]')
 
         for name, loaded_weight in weights:
             print(f"hosseins: LlamaModel -> load_weights() [{name=}]")
@@ -484,7 +522,6 @@ class LlamaModel(nn.Module):
                 weight_loader(param, loaded_weight)
             loaded_params.add(name)
             
-            # xs.mark_sharding(param, self.mesh, get_col_parallel_partition_spec())
             print(f"hosseins: LlamaModel -> load_weights() [{weight_name=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{type(param)=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")

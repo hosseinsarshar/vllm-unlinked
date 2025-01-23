@@ -13,6 +13,8 @@ from torch.distributed import TCPStore
 
 import vllm.envs as envs
 from vllm.logger import init_logger
+import torch_xla.distributed.spmd as xs
+from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
 logger = init_logger(__name__)
 
@@ -258,10 +260,15 @@ def get_mesh():
 mesh = None
 
 def get_col_parallel_partition_spec():
-    return ('data', 'model')
-    # return ('model', 'data')
-
-def get_row_parallel_partition_spec():
     return ('model', 'data')
     # return ('data', 'model')
 
+def get_row_parallel_partition_spec():
+    return ('data', 'model')
+    # return ('model', 'data')
+
+def shard_spmd(data, mesh, partition_spec):
+    xs.mark_sharding(data, mesh, partition_spec)
+    print("hosseins: after sharding param")
+    generated_table = visualize_tensor_sharding(data, use_color=False)
+    print(generated_table)

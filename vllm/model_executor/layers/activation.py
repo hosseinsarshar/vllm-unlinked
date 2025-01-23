@@ -13,7 +13,7 @@ from vllm.model_executor.utils import set_weight_attrs
 from vllm.platforms import current_platform
 from vllm.utils import LazyDict
 
-from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
@@ -266,10 +266,7 @@ class ScaledActivation(nn.Module):
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
 
-        xs.mark_sharding(self.data, self.mesh, get_row_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(self.data, use_color=False)
-        print(generated_table)
+        shard_spmd(self.data, self.mesh, get_row_parallel_partition_spec())
 
 
 _ACTIVATION_REGISTRY = LazyDict({

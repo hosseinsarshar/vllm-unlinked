@@ -7,7 +7,7 @@ from torch.nn import Parameter
 from vllm.distributed import get_tensor_model_parallel_rank
 from vllm.logger import init_logger
 
-from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
@@ -97,10 +97,7 @@ class _ColumnvLLMParameter(BasevLLMParameter):
         assert self.data.shape == loaded_weight.shape
         self.data.copy_(loaded_weight)
 
-        xs.mark_sharding(self.data, self.mesh, get_col_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(self.data, use_color=False)
-        print(generated_table)
+        shard_spmd(self.data, self.mesh, get_col_parallel_partition_spec())
 
     def load_merged_column_weight(self, loaded_weight: torch.Tensor, **kwargs):
         print(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{loaded_weight.shape=}]")
@@ -126,10 +123,7 @@ class _ColumnvLLMParameter(BasevLLMParameter):
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
 
-        xs.mark_sharding(self.data, self.mesh, get_col_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(self.data, use_color=False)
-        print(generated_table)
+        shard_spmd(self.data, self.mesh, get_col_parallel_partition_spec())
 
 
     def load_qkv_weight(self, loaded_weight: torch.Tensor, **kwargs):
@@ -160,10 +154,7 @@ class _ColumnvLLMParameter(BasevLLMParameter):
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
 
-        xs.mark_sharding(self.data, self.mesh, get_col_parallel_partition_spec() if self.output_dim == 0 else get_row_parallel_partition_spec())
-        print(f"hosseins: after sharding param on [{get_col_parallel_partition_spec() if self.output_dim == 0 else get_row_parallel_partition_spec()=}]")
-        generated_table = visualize_tensor_sharding(self.data, use_color=False)
-        print(generated_table)
+        shard_spmd(self.data, self.mesh, get_col_parallel_partition_spec() if self.output_dim == 0 else get_row_parallel_partition_spec())
 
 
 
@@ -198,10 +189,7 @@ class RowvLLMParameter(BasevLLMParameter):
         assert self.data.shape == loaded_weight.shape
         self.data.copy_(loaded_weight)
 
-        xs.mark_sharding(self.data, self.mesh, get_row_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(self.data, use_color=False)
-        print(generated_table)
+        shard_spmd(self.data, self.mesh, get_row_parallel_partition_spec())
 
 
 class ModelWeightParameter(_ColumnvLLMParameter, RowvLLMParameter):

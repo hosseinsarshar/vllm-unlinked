@@ -26,7 +26,7 @@ from vllm.model_executor.utils import set_weight_attrs
 
 from vllm.utils import get_tpu_info, get_cpu_memory_util
 
-from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
@@ -654,10 +654,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        xs.mark_sharding(param, self.mesh, get_col_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(param, use_color=False)
-        print(generated_table)
+        shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
@@ -1107,10 +1104,7 @@ class QKVParallelLinear(ColumnParallelLinear):
         print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        xs.mark_sharding(param, self.mesh, get_col_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(param, use_color=False)
-        print(generated_table)
+        shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
 
 
 class RowParallelLinear(LinearBase):
@@ -1249,10 +1243,7 @@ class RowParallelLinear(LinearBase):
         print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        xs.mark_sharding(param, self.mesh, get_row_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(param, use_color=False)
-        print(generated_table)
+        shard_spmd(param, self.mesh, get_row_parallel_partition_spec())
 
 
     def weight_loader_v2(self, param: BasevLLMParameter,

@@ -17,7 +17,7 @@ import torch_xla.distributed.spmd as xs
 
 DEFAULT_VOCAB_PADDING_SIZE = 64
 
-from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
@@ -412,10 +412,7 @@ class VocabParallelEmbedding(torch.nn.Module):
 
         self.mesh = get_mesh()
         
-        xs.mark_sharding(param, self.mesh, get_row_parallel_partition_spec())
-        print("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(param, use_color=False)
-        print(generated_table)
+        shard_spmd(param, self.mesh, get_row_parallel_partition_spec())
 
 
     def forward(self, input_):
