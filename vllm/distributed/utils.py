@@ -15,6 +15,7 @@ import vllm.envs as envs
 from vllm.logger import init_logger
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
+import torch_xla.core.xla_model as xm
 
 logger = init_logger(__name__)
 
@@ -240,10 +241,10 @@ def initialize_spmd():
     xr.use_spmd()
 
     num_devices = xr.global_runtime_device_count()
-    mesh_shape = (num_devices, 1)
+    mesh_shape = (num_devices, )
     print(f"hosseins: mesh_shape: [{mesh_shape=}]")
     device_ids = np.array(range(num_devices))
-    _mesh = Mesh(device_ids, mesh_shape, ('data', 'model')) # 0 column and 1 is row as nn.Linear is `x @ W.T`
+    _mesh = Mesh(device_ids, mesh_shape, ('axis', ))
     mesh = _mesh
     return _mesh
 
@@ -251,24 +252,27 @@ def get_mesh():
     # return None
     global mesh
     if mesh is None:
-        print('hosseins: llama.py creating mesh')
+        print('hosseins: creating mesh')
         mesh = initialize_spmd()
     else:
-        print('hosseins: llama.py returning mesh')
+        print('hosseins: returning mesh')
         return mesh
 
 mesh = None
 
 def get_col_parallel_partition_spec():
-    return ('model', 'data')
+    return ('axis', None)
     # return ('data', 'model')
 
 def get_row_parallel_partition_spec():
-    return ('data', 'model')
+    return (None, 'axis')
     # return ('model', 'data')
 
-def shard_spmd(data, mesh, partition_spec):
+def shard_spmd(data, mesh, partition_spec, show_visual=True):
     xs.mark_sharding(data, mesh, partition_spec)
-    print("hosseins: after sharding param")
-    generated_table = visualize_tensor_sharding(data, use_color=False)
-    print(generated_table)
+    xm.mark_step()
+
+    if show_visual:
+        print("hosseins: after sharding param")
+        generated_table = visualize_tensor_sharding(data, use_color=False)
+        print(generated_table)

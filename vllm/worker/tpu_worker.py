@@ -18,6 +18,9 @@ from vllm.worker.worker_base import (LocalOrDistributedWorkerBase,
                                      LoraNotSupportedWorkerBase, WorkerBase,
                                      WorkerInput)
 
+from vllm.distributed.utils import get_mesh
+from vllm.utils import get_tpu_info
+
 logger = init_logger(__name__)
 
 
@@ -38,6 +41,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.distributed_init_method = distributed_init_method
         self.is_driver_worker = is_driver_worker
 
+        self.mesh = get_mesh()
+
         assert self.device_config.device_type == "tpu"
         if self.cache_config.cache_dtype == "auto":
             self.cache_dtype = self.model_config.dtype
@@ -47,6 +52,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
 
         self.model_runner: TPUModelRunner = TPUModelRunner(
             vllm_config=vllm_config, is_driver_worker=is_driver_worker)
+        
 
     def init_device(self) -> None:
         os.environ["PJRT_DEVICE"] = "TPU"
@@ -95,6 +101,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.model_runner.load_model()
 
     def determine_num_available_blocks(self) -> Tuple[int, int]:
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks()")
+        
         num_layers = self.model_config.get_num_layers(self.parallel_config)
         head_size = self.model_config.get_head_size()
         num_kv_heads = self.model_config.get_num_kv_heads(self.parallel_config)
@@ -119,7 +127,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
 
         # Get the maximum amount of memory used by the model weights and
         # intermediate activations.
-        m = xm.get_memory_info(self.device)
+        # hosseins: xm.get_memory_info is not supported in SPMD changing it to metrics.get_chip_usage
+        m = get_tpu_info(0)
         total_memory_size = m["bytes_limit"]
         profiled = m["peak_bytes_used"]  # Weights + intermediate activations.
 

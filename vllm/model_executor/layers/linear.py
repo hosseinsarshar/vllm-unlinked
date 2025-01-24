@@ -139,7 +139,7 @@ class UnquantizedLinearMethod(LinearMethodBase):
                                        input_size_per_partition,
                                        dtype=params_dtype),
                            requires_grad=False)
-        print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{weight.shape=}]")
+        print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{weight.shape=}] [{weight.device=}]")
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
         print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{tpu_activities=}] [{cpu_mem_util=}]")
@@ -645,7 +645,6 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
-        # param_data._sync(param)
 
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.device=}]")
         print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.device=}]")

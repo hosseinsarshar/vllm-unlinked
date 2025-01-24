@@ -1957,8 +1957,8 @@ from tpu_info import device as tpu_info_device
 from tpu_info.cli import metrics
 
 def get_tpu_info(device = None):
-    # return {f"TPU Utilization (%) / Device 0": 0} | {f"TPU Memory (%) / Device 0": 0}
     tpu_info = metrics.get_chip_usage(tpu_info_device.get_local_chips()[0])
-    util = {f"TPU Utilization (%) / Device {tpu.device_id}": tpu.duty_cycle_pct for tpu in (tpu_info if device is None else [tpu_info[device]])}
-    memory = {f"TPU Memory (%) / Device {tpu.device_id}": tpu.memory_usage / tpu.total_memory * 100 for tpu in (tpu_info if device is None else [tpu_info[device]])}
+    util = {f"bytes_limit": tpu.total_memory for tpu in (tpu_info if device is None else [tpu_info[device]])}
+    memory = {f"peak_bytes_used": tpu.memory_usage for tpu in (tpu_info if device is None else [tpu_info[device]])}
     return util | memory
+    # return {f"TPU Utilization (%) / Device 0": 0} | {f"TPU Memory (%) / Device 0": 0}

@@ -63,6 +63,7 @@ import numpy as np
 
 from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
 import torch_xla.distributed.spmd as xs
+from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
 
 TORCH_TO_NUMPY_DTYPE = {
@@ -85,11 +86,14 @@ def estimate_tensor_memory(shape, dtype):
             raise ValueError(f"Unsupported PyTorch dtype: {dtype}")
         dtype = TORCH_TO_NUMPY_DTYPE[dtype]
 
+    print(f'hosseins: estimate_tensor_memory-> [{shape=}] - {dtype=}')
     # Get the number of elements in the tensor
     num_elements = np.prod(shape)
 
     # Get the size of each element in bytes
     dtype_size = np.dtype(dtype).itemsize
+
+    print(f'hosseins: estimate_tensor_memory-> [{num_elements=}] - {dtype_size=}')
 
     # Calculate total memory consumption
     memory_bytes = num_elements * dtype_size
@@ -392,8 +396,8 @@ class LlamaModel(nn.Module):
         print(f"hosseins: LlamaModel -> get_input_embeddings : [{len(input_ids)=}]")
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        # print(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
-        # print(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
+        print(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
+        print(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
 
         return self.embed_tokens(input_ids)
 
@@ -459,8 +463,14 @@ class LlamaModel(nn.Module):
             total_bytes += param_bytes
             # print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].data=}]')
 
-        print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{total_bytes=}]')
+        print(f'hosseins: LlamaModel -> load_weights() [{total_bytes=}]')
+        tpu_activities = get_tpu_info(0)
+        cpu_mem_util = get_cpu_memory_util()
+        print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
+        print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
 
+        total_loaded_params = 0
+        processed_params = set()
         for name, loaded_weight in weights:
             print(f"hosseins: LlamaModel -> load_weights() [{name=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
@@ -485,6 +495,14 @@ class LlamaModel(nn.Module):
                 loaded_weight = loaded_weight[0]
                 weight_loader(param, loaded_weight)
                 loaded_params.add(scale_name)
+                param_bytes = estimate_tensor_memory(loaded_weight.shape, loaded_weight.dtype)
+                total_loaded_params += param_bytes
+                processed_params.add(scale_name)
+
+                print(f"hosseins: LlamaModel -> load_weights() - scale_name := get_compressed_tensors_cache_scale(name)")
+
+                visualize_tensor_sharding(param, use_color=False)
+
                 continue
             for param_name, weight_name, shard_id in stacked_params_mapping:
                 if weight_name not in name:
@@ -501,6 +519,13 @@ class LlamaModel(nn.Module):
                 print(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}] [{shard_id=}]")
                 weight_loader = param.weight_loader
                 weight_loader(param, loaded_weight, shard_id)
+                param_bytes = estimate_tensor_memory(loaded_weight.shape, loaded_weight.dtype)
+                total_loaded_params += param_bytes
+                processed_params.add(name)
+                
+                print(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping")
+                visualize_tensor_sharding(param, use_color=False)
+                
                 break
             else:
                 # Skip loading extra bias for GPTQ models.
@@ -520,6 +545,13 @@ class LlamaModel(nn.Module):
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
                 weight_loader(param, loaded_weight)
+
+                param_bytes = estimate_tensor_memory(loaded_weight.shape, loaded_weight.dtype)
+                total_loaded_params += param_bytes
+                processed_params.add(name)
+                print(f"hosseins: LlamaModel -> load_weights() - else:")
+                visualize_tensor_sharding(param, use_color=False)
+
             loaded_params.add(name)
             
             print(f"hosseins: LlamaModel -> load_weights() [{weight_name=}]")
@@ -537,7 +569,17 @@ class LlamaModel(nn.Module):
             print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
             print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
 
+        print(f'hosseins: LlamaModel -> load_weights() [{len(loaded_params)=}]')
         print(f"hosseins: LlamaModel -> load_weights() [{loaded_params=}]")
+        print(f'hosseins: LlamaModel -> load_weights() [{len(processed_params)=}]')
+        print(f'hosseins: LlamaModel -> load_weights() [{processed_params=}]')
+        print(f'hosseins: LlamaModel -> load_weights() [{len(params_dict.keys())=}]')
+        print(f'hosseins: LlamaModel -> load_weights() [{total_loaded_params=}]')
+
+        tpu_activities = get_tpu_info(0)
+        cpu_mem_util = get_cpu_memory_util()
+        print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
+        print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
         return loaded_params
 
     # If this function is called, it should always initialize KV cache scale

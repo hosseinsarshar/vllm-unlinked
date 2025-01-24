@@ -587,8 +587,8 @@ def default_weight_loader(param: torch.Tensor,
         # debug weight loading issues.
         raise
 
-    print(f"hosseins: weight_utils.py -> default_weight_loader() [{param.data.shape}]")
-    print(f"hosseins: weight_utils.py -> default_weight_loader() [{param.data.device}]")
+    print(f"hosseins: weight_utils.py -> default_weight_loader() [{param.data.shape=}]")
+    print(f"hosseins: weight_utils.py -> default_weight_loader() [{param.data.device=}]")
 
 
 def row_parallel_weight_loader(param: torch.Tensor,
