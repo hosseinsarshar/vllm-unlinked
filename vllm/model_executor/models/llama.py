@@ -523,7 +523,7 @@ class LlamaModel(nn.Module):
                 total_loaded_params += param_bytes
                 processed_params.add(name)
                 
-                print(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping")
+                print(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping [{param.device=}]")
                 shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
 
                 visualize_tensor_sharding(param, use_color=False)

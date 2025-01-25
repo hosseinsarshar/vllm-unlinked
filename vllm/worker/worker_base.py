@@ -319,7 +319,7 @@ class LocalOrDistributedWorkerBase(WorkerBase):
         start_time = time.perf_counter()
 
         inputs = self.prepare_input(execute_model_req)
-        print(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{inputs=}]")
+        # print(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{inputs=}]")
 
         if inputs is None:
             return None

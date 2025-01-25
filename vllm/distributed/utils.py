@@ -261,13 +261,21 @@ def get_mesh():
 
 mesh = None
 
+# def get_col_parallel_partition_spec():
+#     return ('axis', None)
+#     # return ('data', 'model')
+# 
+# def get_row_parallel_partition_spec():
+#     return (None, 'axis')
+#     # return ('model', 'data')
+
 def get_col_parallel_partition_spec():
-    return ('axis', None)
-    # return ('data', 'model')
+    # return ('axis', None)
+    return (None, 'axis')
 
 def get_row_parallel_partition_spec():
-    return (None, 'axis')
-    # return ('model', 'data')
+    # return (None, 'axis')
+    return ('axis', None)
 
 def shard_spmd(data, mesh, partition_spec, show_visual=True):
     xs.mark_sharding(data, mesh, partition_spec)
@@ -278,4 +286,3 @@ def shard_spmd(data, mesh, partition_spec, show_visual=True):
     if show_visual:
         print("hosseins: after sharding param")
         generated_table = visualize_tensor_sharding(data, use_color=False)
-        print(generated_table)
