@@ -16,6 +16,7 @@ from vllm.logger import init_logger
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 import torch_xla.core.xla_model as xm
+import torch_xla
 
 logger = init_logger(__name__)
 
@@ -271,6 +272,8 @@ def get_row_parallel_partition_spec():
 def shard_spmd(data, mesh, partition_spec, show_visual=True):
     xs.mark_sharding(data, mesh, partition_spec)
     xm.mark_step()
+    sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
+    print(f"hosseins: shard_spmd() -> [{sharding=}]")
 
     if show_visual:
         print("hosseins: after sharding param")

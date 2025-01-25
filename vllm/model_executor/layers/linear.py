@@ -613,6 +613,8 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
             param_data = param_data.narrow(output_dim, shard_offset,
                                             shard_size)
+            shard_spmd(param_data, self.mesh, get_col_parallel_partition_spec())
+
             start_idx = tp_rank * shard_size
             # bitsandbytes loads the weights of the specific portion
             # no need to narrow here

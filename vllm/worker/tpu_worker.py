@@ -129,6 +129,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         # intermediate activations.
         # hosseins: xm.get_memory_info is not supported in SPMD changing it to metrics.get_chip_usage
         m = get_tpu_info(0)
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() -> get_tpu_info(0) [{m=}]")
         total_memory_size = m["bytes_limit"]
         profiled = m["peak_bytes_used"]  # Weights + intermediate activations.
 

@@ -350,7 +350,7 @@ class LlamaModel(nn.Module):
                  layer_type: Type[LlamaDecoderLayer] = LlamaDecoderLayer):
         super().__init__()
         print(f"hosseins: LlamaModel -> __init__ : [{vllm_config=}]")
-        # self.mesh = get_mesh()
+        self.mesh = get_mesh()
         config = vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
         quant_config = vllm_config.quant_config
@@ -524,6 +524,8 @@ class LlamaModel(nn.Module):
                 processed_params.add(name)
                 
                 print(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping")
+                shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
+
                 visualize_tensor_sharding(param, use_color=False)
                 
                 break
@@ -725,7 +727,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         intermediate_tensors: Optional[IntermediateTensors] = None,
         inputs_embeds: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, IntermediateTensors]:
-        print(f"hossein: LlamaForCausalLM -> forward")
+        print(f"hosseins: LlamaForCausalLM -> forward")
         model_output = self.model(input_ids, positions, kv_caches,
                                   attn_metadata, intermediate_tensors,
                                   inputs_embeds)
