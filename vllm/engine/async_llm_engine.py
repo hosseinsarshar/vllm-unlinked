@@ -590,8 +590,8 @@ class AsyncLLMEngine(EngineClient):
                  log_requests: bool = True,
                  start_engine_loop: bool = True,
                  **kwargs) -> None:
-        print(f"hosseins: AsyncLLMEngine -> __init__(): {args=}")
-        print(f"hosseins: AsyncLLMEngine -> __init__(): {kwargs=}")
+        logger.info(f"hosseins: AsyncLLMEngine -> __init__(): {args=}")
+        logger.info(f"hosseins: AsyncLLMEngine -> __init__(): {kwargs=}")
         
         self.log_requests = log_requests
         self.engine = self._engine_class(*args, **kwargs)
@@ -625,7 +625,7 @@ class AsyncLLMEngine(EngineClient):
     @classmethod
     def _get_executor_cls(
             cls, engine_config: VllmConfig) -> Type[ExecutorAsyncBase]:
-        print(f"hosseins: AsyncLLMEngine -> _get_executor_cls(): {engine_config=}")
+        logger.info(f"hosseins: AsyncLLMEngine -> _get_executor_cls(): {engine_config=}")
 
         distributed_executor_backend = (
             engine_config.parallel_config.distributed_executor_backend)
@@ -700,8 +700,8 @@ class AsyncLLMEngine(EngineClient):
     ) -> "AsyncLLMEngine":
         """Creates an async LLM engine from the engine arguments."""
         # Create the engine configs.
-        print(f"hosseins: AsyncLLMEngine -> from_engine_args(): {engine_args=}")
-        print(f"hosseins: AsyncLLMEngine -> from_engine_args(): {engine_config=}")
+        logger.info(f"hosseins: AsyncLLMEngine -> from_engine_args(): {engine_args=}")
+        logger.info(f"hosseins: AsyncLLMEngine -> from_engine_args(): {engine_config=}")
         if engine_config is None:
             engine_config = engine_args.create_engine_config(usage_context)
 

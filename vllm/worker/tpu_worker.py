@@ -101,7 +101,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.model_runner.load_model()
 
     def determine_num_available_blocks(self) -> Tuple[int, int]:
-        print(f"hosseins: TPUWorker -> determine_num_available_blocks()")
+        logger.info(f"hosseins: TPUWorker -> determine_num_available_blocks()")
         
         num_layers = self.model_config.get_num_layers(self.parallel_config)
         head_size = self.model_config.get_head_size()
@@ -129,7 +129,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         # intermediate activations.
         # hosseins: xm.get_memory_info is not supported in SPMD changing it to metrics.get_chip_usage
         m = get_tpu_info(0)
-        print(f"hosseins: TPUWorker -> determine_num_available_blocks() -> get_tpu_info(0) [{m=}]")
+        logger.info(f"hosseins: TPUWorker -> determine_num_available_blocks() -> get_tpu_info(0) [{m=}]")
         total_memory_size = m["bytes_limit"]
         profiled = m["peak_bytes_used"]  # Weights + intermediate activations.
 

@@ -168,8 +168,8 @@ class GroupCoordinator:
         use_message_queue_broadcaster: bool = False,
         group_name: Optional[str] = None,
     ):
-        print(f"hosseins: GroupCoordinator __init__() {group_ranks=}")
-        print(f"hosseins: GroupCoordinator __init__() {local_rank=}")
+        logger.info(f"hosseins: GroupCoordinator __init__() {group_ranks=}")
+        logger.info(f"hosseins: GroupCoordinator __init__() {local_rank=}")
         
         group_name = group_name or "anonymous"
         self.unique_name = _get_unique_name(group_name)
@@ -193,11 +193,11 @@ class GroupCoordinator:
                 self.device_group = device_group
                 self.cpu_group = cpu_group
 
-        print(f"hosseins: GroupCoordinator -> __init__() {self.ranks=}")
-        print(f"hosseins: GroupCoordinator -> __init__() {self.world_size=}")
-        print(f"hosseins: GroupCoordinator -> __init__() {self.rank_in_group=}")
-        print(f"hosseins: GroupCoordinator -> __init__() {self.device_group=}")
-        print(f"hosseins: GroupCoordinator -> __init__() {self.cpu_group=}")        
+        logger.info(f"hosseins: GroupCoordinator -> __init__() {self.ranks=}")
+        logger.info(f"hosseins: GroupCoordinator -> __init__() {self.world_size=}")
+        logger.info(f"hosseins: GroupCoordinator -> __init__() {self.rank_in_group=}")
+        logger.info(f"hosseins: GroupCoordinator -> __init__() {self.device_group=}")
+        logger.info(f"hosseins: GroupCoordinator -> __init__() {self.cpu_group=}")        
 
         assert self.cpu_group is not None
         assert self.device_group is not None
@@ -851,9 +851,9 @@ def get_world_group() -> GroupCoordinator:
 
 def init_world_group(ranks: List[int], local_rank: int,
                      backend: str) -> GroupCoordinator:
-    print(f"hosseins: parallel_state.py -> init_world_group {ranks=}")
-    print(f"hosseins: parallel_state.py -> init_world_group {backend=}")
-    print(f"hosseins: parallel_state.py -> init_world_group {local_rank=}")
+    logger.info(f"hosseins: parallel_state.py -> init_world_group {ranks=}")
+    logger.info(f"hosseins: parallel_state.py -> init_world_group {backend=}")
+    logger.info(f"hosseins: parallel_state.py -> init_world_group {local_rank=}")
     return GroupCoordinator(
         group_ranks=[ranks],
         local_rank=local_rank,
@@ -875,12 +875,12 @@ def init_model_parallel_group(
     use_message_queue_broadcaster: bool = False,
     group_name: Optional[str] = None,
 ) -> GroupCoordinator:
-    print(f"hosseins: parallel_state.py -> init_model_parallel_group {group_ranks=}")
-    print(f"hosseins: parallel_state.py -> init_model_parallel_group {local_rank=}")
-    print(f"hosseins: parallel_state.py -> init_model_parallel_group {backend=}")
-    print(f"hosseins: parallel_state.py -> init_model_parallel_group {use_custom_allreduce=}")
-    print(f"hosseins: parallel_state.py -> init_model_parallel_group {use_message_queue_broadcaster=}")
-    print(f"hosseins: parallel_state.py -> init_model_parallel_group {group_name=}")
+    logger.info(f"hosseins: parallel_state.py -> init_model_parallel_group {group_ranks=}")
+    logger.info(f"hosseins: parallel_state.py -> init_model_parallel_group {local_rank=}")
+    logger.info(f"hosseins: parallel_state.py -> init_model_parallel_group {backend=}")
+    logger.info(f"hosseins: parallel_state.py -> init_model_parallel_group {use_custom_allreduce=}")
+    logger.info(f"hosseins: parallel_state.py -> init_model_parallel_group {use_message_queue_broadcaster=}")
+    logger.info(f"hosseins: parallel_state.py -> init_model_parallel_group {group_name=}")
     
     if use_custom_allreduce is None:
         use_custom_allreduce = _ENABLE_CUSTOM_ALL_REDUCE
@@ -968,10 +968,10 @@ def init_distributed_environment(
     local_rank: int = -1,
     backend: str = "nccl",
 ):
-    print(f"hosseins: parallel_state.py -> init_distributed_environment {rank=}")
-    print(f"hosseins: parallel_state.py -> init_distributed_environment {distributed_init_method=}")
-    print(f"hosseins: parallel_state.py -> init_distributed_environment {local_rank=}")
-    print(f"hosseins: parallel_state.py -> init_distributed_environment {backend=}")
+    logger.info(f"hosseins: parallel_state.py -> init_distributed_environment {rank=}")
+    logger.info(f"hosseins: parallel_state.py -> init_distributed_environment {distributed_init_method=}")
+    logger.info(f"hosseins: parallel_state.py -> init_distributed_environment {local_rank=}")
+    logger.info(f"hosseins: parallel_state.py -> init_distributed_environment {backend=}")
     
     logger.debug(
         "world_size=%d rank=%d local_rank=%d "
@@ -1033,9 +1033,9 @@ def initialize_model_parallel(
     with a total of 16 GPUs, rank 0 to 7 belong to the first box and
     ranks 8 to 15 belong to the second box.
     """
-    print(f"hosseins: parallel_state.py -> initialize_model_parallel {tensor_model_parallel_size=}")
-    print(f"hosseins: parallel_state.py -> initialize_model_parallel {pipeline_model_parallel_size=}")
-    print(f"hosseins: parallel_state.py -> initialize_model_parallel {backend=}")
+    logger.info(f"hosseins: parallel_state.py -> initialize_model_parallel {tensor_model_parallel_size=}")
+    logger.info(f"hosseins: parallel_state.py -> initialize_model_parallel {pipeline_model_parallel_size=}")
+    logger.info(f"hosseins: parallel_state.py -> initialize_model_parallel {backend=}")
 
     # Get world size and rank. Ensure some consistencies.
     assert torch.distributed.is_initialized()
@@ -1091,7 +1091,7 @@ def ensure_kv_transfer_initialized(vllm_config: "VllmConfig") -> None:
     """
     Initialize KV cache transfer parallel group.
     """
-    print(f"hosseins: parallel_state.py -> ensure_kv_transfer_initialized {vllm_config=}")
+    logger.info(f"hosseins: parallel_state.py -> ensure_kv_transfer_initialized {vllm_config=}")
 
     global _KV_TRANSFER
 
@@ -1113,9 +1113,9 @@ def ensure_model_parallel_initialized(
     pipeline_model_parallel_size: int,
     backend: Optional[str] = None,
 ) -> None:
-    print(f"hosseins: parallel_state.py -> ensure_model_parallel_initialized {tensor_model_parallel_size=}")
-    print(f"hosseins: parallel_state.py -> ensure_model_parallel_initialized {pipeline_model_parallel_size=}")
-    print(f"hosseins: parallel_state.py -> ensure_model_parallel_initialized {backend=}")
+    logger.info(f"hosseins: parallel_state.py -> ensure_model_parallel_initialized {tensor_model_parallel_size=}")
+    logger.info(f"hosseins: parallel_state.py -> ensure_model_parallel_initialized {pipeline_model_parallel_size=}")
+    logger.info(f"hosseins: parallel_state.py -> ensure_model_parallel_initialized {backend=}")
     
     """Helper to initialize model parallel groups if they are not initialized,
     or ensure tensor-parallel and pipeline-parallel sizes are equal to expected
@@ -1221,10 +1221,10 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
 
 def in_the_same_node_as(pg: Union[ProcessGroup, StatelessProcessGroup],
                         source_rank: int = 0) -> List[bool]:
-    print(f"hosseins: parallel_state.py -> in_the_same_node_as {pg=}")
-    print(f"hosseins: parallel_state.py -> in_the_same_node_as {source_rank=}")
+    logger.info(f"hosseins: parallel_state.py -> in_the_same_node_as {pg=}")
+    logger.info(f"hosseins: parallel_state.py -> in_the_same_node_as {source_rank=}")
     
-    print(f"hosseins: parallel_state -> in_the_same_node_as {source_rank=}")
+    logger.info(f"hosseins: parallel_state -> in_the_same_node_as {source_rank=}")
     """
     This is a collective operation that returns if each rank is in the same node
     as the source rank. It tests if processes are attached to the same

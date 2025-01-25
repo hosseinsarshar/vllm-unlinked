@@ -41,9 +41,9 @@ WEIGHT_LOADER_V2_SUPPORTED = [
     "HQQMarlinMethod"
 ]
 
-print("hosseins: linear.py is called")
+logger.info("hosseins: linear.py is called")
 def adjust_marlin_shard(param, shard_size, shard_offset):
-    print(f"hosseins: linear.py -> adjust_marlin_shard() [{shard_size=}] - [{shard_offset=}]")
+    logger.info(f"hosseins: linear.py -> adjust_marlin_shard() [{shard_size=}] - [{shard_offset=}]")
     marlin_tile_size = getattr(param, "marlin_tile_size", None)
     if marlin_tile_size is None:
         return shard_size, shard_offset
@@ -55,7 +55,7 @@ def adjust_bitsandbytes_4bit_shard(param: Parameter,
                                    shard_offsets: Dict[str, Tuple[int, int]],
                                    loaded_shard_id: str) -> Tuple[int, int]:
     """Adjust the quantization offsets and sizes for BitsAndBytes sharding."""
-    print(f"hosseins: linear.py -> adjust_bitsandbytes_4bit_shard()")
+    logger.info(f"hosseins: linear.py -> adjust_bitsandbytes_4bit_shard()")
 
     total, _ = shard_offsets["total"]
     orig_offset, orig_size = shard_offsets[loaded_shard_id]
@@ -74,7 +74,7 @@ def adjust_scalar_to_fused_array(param, loaded_weight, shard_id):
     one of the shards on disk. Here, we slice the param based on 
     the shard_id for loading.
     """
-    print(f"hosseins: linear.py -> adjust_scalar_to_fused_array() [{shard_id=}]")
+    logger.info(f"hosseins: linear.py -> adjust_scalar_to_fused_array() [{shard_id=}]")
     qkv_idxs = {"q": 0, "k": 1, "v": 2}
 
     if isinstance(shard_id, str):
@@ -133,16 +133,16 @@ class UnquantizedLinearMethod(LinearMethodBase):
                        output_partition_sizes: List[int], input_size: int,
                        output_size: int, params_dtype: torch.dtype,
                        **extra_weight_attrs):
-        print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{output_size=}]")
-        # print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{extra_weight_attrs=}]")
+        logger.info(f"hosseins: UnquantizedLinearMethod -> create_weights() [{output_size=}]")
+        # logger.info(f"hosseins: UnquantizedLinearMethod -> create_weights() [{extra_weight_attrs=}]")
         weight = Parameter(torch.empty(sum(output_partition_sizes),
                                        input_size_per_partition,
                                        dtype=params_dtype),
                            requires_grad=False)
-        print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{weight.shape=}] [{weight.device=}]")
+        logger.info(f"hosseins: UnquantizedLinearMethod -> create_weights() [{weight.shape=}] [{weight.device=}]")
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: UnquantizedLinearMethod -> create_weights() [{tpu_activities=}] [{cpu_mem_util=}]")
+        logger.info(f"hosseins: UnquantizedLinearMethod -> create_weights() [{tpu_activities=}] [{cpu_mem_util=}]")
         set_weight_attrs(weight, {"input_dim": 1, "output_dim": 0})
         layer.register_parameter("weight", weight)
         set_weight_attrs(weight, extra_weight_attrs)
@@ -153,7 +153,7 @@ class UnquantizedLinearMethod(LinearMethodBase):
               bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        # print(f"hosseins: UnquantizedLinearMethod -> apply() [{tpu_activities=}]")
+        # logger.info(f"hosseins: UnquantizedLinearMethod -> apply() [{tpu_activities=}]")
 
         return F.linear(x, layer.weight, bias)
 
@@ -179,7 +179,7 @@ class LinearBase(torch.nn.Module):
         quant_config: Optional[QuantizationConfig] = None,
         prefix: str = "",
     ):
-        print(f"hosseins: LinearBase -> __init__() [{input_size=}]")
+        logger.info(f"hosseins: LinearBase -> __init__() [{input_size=}]")
         super().__init__()
 
         # Keep input parameters
@@ -228,7 +228,7 @@ class ReplicatedLinear(LinearBase):
                          params_dtype,
                          quant_config,
                          prefix=prefix)
-        print(f"hosseins: ReplicatedLinear -> __init__()")
+        logger.info(f"hosseins: ReplicatedLinear -> __init__()")
         
         # All the linear layer supports quant method.
         assert self.quant_method is not None
@@ -250,7 +250,7 @@ class ReplicatedLinear(LinearBase):
             self.register_parameter("bias", None)
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
-        print(f"hosseins: ReplicatedLinear -> weight_loader()")
+        logger.info(f"hosseins: ReplicatedLinear -> weight_loader()")
         # If the weight on disk does not have a shape, give it one
         # (such scales for AutoFp8).
         if len(loaded_weight.shape) == 0:
@@ -270,7 +270,7 @@ class ReplicatedLinear(LinearBase):
         return output, output_bias
 
     def extra_repr(self) -> str:
-        print(f"hosseins: ReplicatedLinear -> extra_repr()")
+        logger.info(f"hosseins: ReplicatedLinear -> extra_repr()")
         s = f"in_features={self.input_size}"
         s += f", output_features={self.output_size}"
         s += f", bias={self.bias is not None}"
@@ -316,7 +316,7 @@ class ColumnParallelLinear(LinearBase):
         
         self.mesh = get_mesh()
 
-        print(f"hosseins: ColumnParallelLinear -> __init__()")
+        logger.info(f"hosseins: ColumnParallelLinear -> __init__()")
 
         self.gather_output = gather_output
 
@@ -357,7 +357,7 @@ class ColumnParallelLinear(LinearBase):
             self.register_parameter("bias", None)
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
-        print(f"hosseins: ColumnParallelLinear -> weight_loader()")
+        logger.info(f"hosseins: ColumnParallelLinear -> weight_loader()")
         tp_rank = get_tensor_model_parallel_rank()
         output_dim = getattr(param, "output_dim", None)
 
@@ -373,11 +373,11 @@ class ColumnParallelLinear(LinearBase):
 
         use_bitsandbytes_4bit = getattr(param, "use_bitsandbytes_4bit", False)
 
-        print(f"hosseins: {output_dim=}")
-        print(f"hosseins: {tp_rank=}")
+        logger.info(f"hosseins: {output_dim=}")
+        logger.info(f"hosseins: {tp_rank=}")
 
         param_data = param.data
-        print(f"hosseins: {param_data=}")
+        logger.info(f"hosseins: {param_data=}")
         # bitsandbytes loads the weights of the specific portion
         # no need to narrow here
         if output_dim is not None and not use_bitsandbytes_4bit:
@@ -396,7 +396,7 @@ class ColumnParallelLinear(LinearBase):
         param_data.copy_(loaded_weight)
 
     def weight_loader_v2(self, param: Parameter, loaded_weight: torch.Tensor):
-        print(f"hosseins: ColumnParallelLinear -> weight_loader_v2()")
+        logger.info(f"hosseins: ColumnParallelLinear -> weight_loader_v2()")
         # Special case for loading scales off disk, which often do not
         # have a shape (such as in the case of AutoFP8).
         if len(loaded_weight.shape) == 0:
@@ -419,7 +419,7 @@ class ColumnParallelLinear(LinearBase):
         return output, output_bias
 
     def extra_repr(self) -> str:
-        print(f"hosseins: ColumnParallelLinear -> extra_repr()")
+        logger.info(f"hosseins: ColumnParallelLinear -> extra_repr()")
         s = f"in_features={self.input_size}"
         s += f", output_features={self.output_size_per_partition}"
         s += f", bias={self.bias is not None}"
@@ -462,7 +462,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                  prefix: str = ""):
         self.output_sizes = output_sizes
         tp_size = get_tensor_model_parallel_world_size()
-        print(f"hosseins: MergedColumnParallelLinear -> __init__: {tp_size=}")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> __init__: {tp_size=}")
 
         assert all(output_size % tp_size == 0 for output_size in output_sizes)
         super().__init__(input_size=input_size,
@@ -478,7 +478,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                         param: Parameter,
                         loaded_weight: torch.Tensor,
                         loaded_shard_id: Optional[int] = None):
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader")
 
         # Special case for GGUF
         # initialize GGUF param after we know the quantize type
@@ -487,17 +487,17 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         is_gguf_weight = getattr(param, "is_gguf_weight", False)
         is_gguf_weight_type = getattr(param, "is_gguf_weight_type", False)
 
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{is_gguf_weight=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{is_gguf_weight_type=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{loaded_weight.device=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{loaded_weight.shape=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{loaded_shard_id=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{self.output_sizes=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{param.device=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{param.shape=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{param.data.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{is_gguf_weight=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{is_gguf_weight_type=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{loaded_weight.device=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{loaded_shard_id=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{self.output_sizes=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{param.device=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{param.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{param.data.shape=}]")
         
-        # print(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{param=}]")
+        # logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() [{param=}]")
         
         if is_gguf_weight_type:
             # hosseins: this is also not being called in llama-8b on TPU
@@ -531,9 +531,9 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         is_metadata = getattr(param, "is_metadata", False)
         # Special case for per-tensor scale to load scalar into fused array.
         needs_scalar_to_array = getattr(param, "needs_scalar_to_array", False)
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{output_dim=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 before narrow [{param_data.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{output_dim=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 before narrow [{param_data.shape=}]")
 
         if loaded_shard_id is None:
             # Loaded weight is already fused on disk (mlp).
@@ -584,8 +584,8 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         assert loaded_shard_id < len(self.output_sizes)
         tp_rank = get_tensor_model_parallel_rank()
         tp_size = get_tensor_model_parallel_world_size()
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{is_metadata=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{is_metadata=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
 
         if output_dim is not None:
             shard_offset = sum(self.output_sizes[:loaded_shard_id]) // tp_size
@@ -594,7 +594,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
             # If quantized, we need to adjust the offset and size to account
             # for the packing.
             packed_dim = getattr(param, "packed_dim", None)
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{packed_dim=}]")
+            logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{packed_dim=}]")
 
             if packed_dim == output_dim:
                 shard_size = shard_size // param.pack_factor
@@ -605,7 +605,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
             use_bitsandbytes_4bit = getattr(param, "use_bitsandbytes_4bit",
                                             False)
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{use_bitsandbytes_4bit=}]")
+            logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{use_bitsandbytes_4bit=}]")
             if use_bitsandbytes_4bit:
                 shard_size = loaded_weight.shape[output_dim]
                 shard_offset = loaded_weight.shape[output_dim] * \
@@ -618,10 +618,10 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
             start_idx = tp_rank * shard_size
             # bitsandbytes loads the weights of the specific portion
             # no need to narrow here
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{output_dim=}]")
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{start_idx=}]")
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{shard_offset=}]")
-            print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{shard_size=}]")
+            logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{output_dim=}]")
+            logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{start_idx=}]")
+            logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{shard_offset=}]")
+            logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 1 [{shard_size=}]")
             if not use_bitsandbytes_4bit:
                 loaded_weight = loaded_weight.narrow(output_dim, start_idx,
                                                         shard_size)
@@ -648,18 +648,18 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
 
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.device=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.device=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.shape=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{loaded_weight.shape=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.device=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.device=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
         shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
-        print(f"hosseins: MergedColumnParallelLinear -> _load_fused_module_from_checkpoint()")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> _load_fused_module_from_checkpoint()")
         """
         Handle special case for models where MLP layers are already
         fused on disk. In this case, we have no shard id. This function
@@ -695,7 +695,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                          param: BasevLLMParameter,
                          loaded_weight: torch.Tensor,
                          loaded_shard_id: Optional[int] = None):
-        print(f"hosseins: MergedColumnParallelLinear -> weight_loader_v2()")
+        logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader_v2()")
         if loaded_shard_id is None:
             if isinstance(param, PerTensorScaleParameter):
                 param.load_merged_column_weight(loaded_weight=loaded_weight,
@@ -772,7 +772,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                  params_dtype: Optional[torch.dtype] = None,
                  quant_config: Optional[QuantizationConfig] = None,
                  prefix: str = ""):
-        print(f"hosseins: QKVParallelLinear -> __init__: {hidden_size=}")
+        logger.info(f"hosseins: QKVParallelLinear -> __init__: {hidden_size=}")
         
         self.hidden_size = hidden_size
         self.head_size = head_size
@@ -809,7 +809,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                          prefix=prefix)
 
     def _get_shard_offset_mapping(self, loaded_shard_id: str):
-        print(f"hosseins: QKVParallelLinear -> _get_shard_offset_mapping()")
+        logger.info(f"hosseins: QKVParallelLinear -> _get_shard_offset_mapping()")
         shard_offset_mapping = {
             "q": 0,
             "k": self.num_heads * self.head_size,
@@ -819,7 +819,7 @@ class QKVParallelLinear(ColumnParallelLinear):
         return shard_offset_mapping.get(loaded_shard_id)
 
     def _get_shard_size_mapping(self, loaded_shard_id: str):
-        print(f"hosseins: QKVParallelLinear -> _get_shard_size_mapping()")
+        logger.info(f"hosseins: QKVParallelLinear -> _get_shard_size_mapping()")
         shard_size_mapping = {
             "q": self.num_heads * self.head_size,
             "k": self.num_kv_heads * self.head_size,
@@ -829,7 +829,7 @@ class QKVParallelLinear(ColumnParallelLinear):
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
-        print(f"hosseins: QKVParallelLinear -> _load_fused_module_from_checkpoint()")
+        logger.info(f"hosseins: QKVParallelLinear -> _load_fused_module_from_checkpoint()")
         """
         Handle special case for models where QKV layers are already 
         fused on disk. In this case, we have no shard id. This function
@@ -868,7 +868,7 @@ class QKVParallelLinear(ColumnParallelLinear):
                          param: BasevLLMParameter,
                          loaded_weight: torch.Tensor,
                          loaded_shard_id: Optional[str] = None):
-        print(f"hosseins: QKVParallelLinear -> weight_loader_v2()")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader_v2()")
         if loaded_shard_id is None:  # special case for certain models
             if isinstance(param, PerTensorScaleParameter):
                 param.load_qkv_weight(loaded_weight=loaded_weight, shard_id=0)
@@ -895,22 +895,22 @@ class QKVParallelLinear(ColumnParallelLinear):
                       param: Parameter,
                       loaded_weight: torch.Tensor,
                       loaded_shard_id: Optional[str] = None):
-        print(f"hosseins: QKVParallelLinear -> weight_loader()")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader()")
 
         # Special case for GGUF
         # initialize GGUF param after we know the quantize type
         is_gguf_weight = getattr(param, "is_gguf_weight", False)
         is_gguf_weight_type = getattr(param, "is_gguf_weight_type", False)
         
-        print(f"hosseins: QKVParallelLinear -> weight_loader() [{is_gguf_weight=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() [{is_gguf_weight_type=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() [{loaded_weight.device=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() [{loaded_weight.shape=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() [{loaded_shard_id=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() [{self.output_sizes=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{param.device=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{param.shape=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{param.data.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() [{is_gguf_weight=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() [{is_gguf_weight_type=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() [{loaded_weight.device=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() [{loaded_shard_id=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() [{self.output_sizes=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{param.device=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{param.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{param.data.shape=}]")
 
         if is_gguf_weight_type and loaded_shard_id is not None:
             idx_map = {"q": 0, "k": 1, "v": 2}
@@ -945,8 +945,8 @@ class QKVParallelLinear(ColumnParallelLinear):
         # Special case for per-tensor scales in fused case.
         needs_scalar_to_array = getattr(param, "needs_scalar_to_array", False)
 
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{output_dim=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{output_dim=}]")
 
 
         if loaded_shard_id is None:
@@ -1010,8 +1010,8 @@ class QKVParallelLinear(ColumnParallelLinear):
         tp_rank = get_tensor_model_parallel_rank()
         assert loaded_shard_id in ["q", "k", "v"]
 
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{is_metadata=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{is_metadata=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{needs_scalar_to_array=}]")
 
         # If output dim is defined, use the default loading process.
         if output_dim is not None:
@@ -1029,7 +1029,7 @@ class QKVParallelLinear(ColumnParallelLinear):
             # If quantized, we need to adjust the offset and size to account
             # for the packing.
             packed_dim = getattr(param, "packed_dim", None)
-            print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{packed_dim=}]")
+            logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{packed_dim=}]")
 
             if packed_dim == output_dim:
                 shard_size = shard_size // param.pack_factor
@@ -1041,7 +1041,7 @@ class QKVParallelLinear(ColumnParallelLinear):
 
             use_bitsandbytes_4bit = getattr(param, "use_bitsandbytes_4bit",
                                             False)
-            print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{use_bitsandbytes_4bit=}]")
+            logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{use_bitsandbytes_4bit=}]")
             
             if use_bitsandbytes_4bit:
                 orig_qkv_offsets = {
@@ -1066,9 +1066,9 @@ class QKVParallelLinear(ColumnParallelLinear):
                 shard_id = tp_rank // self.num_kv_head_replicas
             start_idx = shard_id * shard_size
 
-            print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{output_dim=}]")
-            print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{start_idx=}]")
-            print(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{shard_size=}]")
+            logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{output_dim=}]")
+            logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{start_idx=}]")
+            logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 1 [{shard_size=}]")
 
             # bitsandbytes loads the weights of the specific portion
             # no need to narrow here
@@ -1098,12 +1098,12 @@ class QKVParallelLinear(ColumnParallelLinear):
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
 
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.device=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.device=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.shape=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{loaded_weight.shape=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
-        print(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.device=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.device=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
+        logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
         shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
 
@@ -1144,7 +1144,7 @@ class RowParallelLinear(LinearBase):
                  reduce_results: bool = True,
                  quant_config: Optional[QuantizationConfig] = None,
                  prefix: str = ""):
-        print(f"hosseins: RowParallelLinear -> __init__()")
+        logger.info(f"hosseins: RowParallelLinear -> __init__()")
         super().__init__(input_size, output_size, skip_bias_add, params_dtype,
                          quant_config, prefix)
         
@@ -1184,7 +1184,7 @@ class RowParallelLinear(LinearBase):
             self.register_parameter("bias", None)
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
-        print(f"hosseins: RowParallelLinear -> weight_loader()")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader()")
         tp_rank = get_tensor_model_parallel_rank()
         tp_size = get_tensor_model_parallel_world_size()
         input_dim = getattr(param, "input_dim", None)
@@ -1196,14 +1196,14 @@ class RowParallelLinear(LinearBase):
         if is_gguf_weight_type:
             param.weight_type = loaded_weight.item()
 
-        print(f"hosseins: RowParallelLinear -> weight_loader() [{is_gguf_weight=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() [{is_gguf_weight_type=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() [{loaded_weight.device=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() [{loaded_weight.shape=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() [{input_dim=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 1 [{param.device=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 1 [{param.shape=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 1 [{param.data.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() [{is_gguf_weight=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() [{is_gguf_weight_type=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() [{loaded_weight.device=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() [{input_dim=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 1 [{param.device=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 1 [{param.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 1 [{param.data.shape=}]")
 
 
         # Materialize GGUF UninitializedParameter
@@ -1213,7 +1213,7 @@ class RowParallelLinear(LinearBase):
                 weight_shape[input_dim] = weight_shape[input_dim] // tp_size
             param.materialize(tuple(weight_shape), dtype=loaded_weight.dtype)
 
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.device=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.device=}]")
 
         param_data = param.data
         # bitsandbytes loads the weights of the specific portion
@@ -1224,9 +1224,9 @@ class RowParallelLinear(LinearBase):
             loaded_weight = loaded_weight.narrow(input_dim, start_idx,
                                                  shard_size)
             
-            print(f"hosseins: RowParallelLinear -> weight_loader() 1 [{input_dim=}]")
-            print(f"hosseins: RowParallelLinear -> weight_loader() 1 [{start_idx=}]")
-            print(f"hosseins: RowParallelLinear -> weight_loader() 1 [{shard_size=}]")
+            logger.info(f"hosseins: RowParallelLinear -> weight_loader() 1 [{input_dim=}]")
+            logger.info(f"hosseins: RowParallelLinear -> weight_loader() 1 [{start_idx=}]")
+            logger.info(f"hosseins: RowParallelLinear -> weight_loader() 1 [{shard_size=}]")
 
 
         # Special case for loading scales off disk, which often do not
@@ -1237,12 +1237,12 @@ class RowParallelLinear(LinearBase):
         assert param_data.shape == loaded_weight.shape
         param_data.copy_(loaded_weight)
 
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.device=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.device=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.shape=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{loaded_weight.shape=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
-        print(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.device=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.device=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
         shard_spmd(param, self.mesh, get_row_parallel_partition_spec())
 
@@ -1250,7 +1250,7 @@ class RowParallelLinear(LinearBase):
     def weight_loader_v2(self, param: BasevLLMParameter,
                          loaded_weight: torch.Tensor):
 
-        print(f"hosseins: RowParallelLinear -> weight_loader_v2()")
+        logger.info(f"hosseins: RowParallelLinear -> weight_loader_v2()")
         # Special case for loading scales off disk, which often do not
         # have a shape (such as in the case of AutoFP8).
         if len(loaded_weight.shape) == 0:
@@ -1286,7 +1286,7 @@ class RowParallelLinear(LinearBase):
         return output, output_bias
 
     def extra_repr(self) -> str:
-        print(f"hosseins: RowParallelLinear -> extra_repr()")
+        logger.info(f"hosseins: RowParallelLinear -> extra_repr()")
         s = f"input_features={self.input_size_per_partition}"
         s += f", output_features={self.output_size}"
         s += f", bias={self.bias is not None}"

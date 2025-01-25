@@ -31,8 +31,8 @@ try:
         lazliy initialized after Ray sets CUDA_VISIBLE_DEVICES."""
 
         def __init__(self, *args, **kwargs) -> None:
-            print(f"hosseins: ray_utils RayWorkerWrapper -> __init__() {args=}")
-            print(f"hosseins: ray_utils RayWorkerWrapper -> __init__() {kwargs=}")
+            logger.info(f"hosseins: ray_utils RayWorkerWrapper -> __init__() {args=}")
+            logger.info(f"hosseins: ray_utils RayWorkerWrapper -> __init__() {kwargs=}")
             super().__init__(*args, **kwargs)
             # Since the compiled DAG runs a main execution
             # in a different thread that calls cuda.set_device.
@@ -50,8 +50,8 @@ try:
         def get_node_and_gpu_ids(self) -> Tuple[str, List[int]]:
             node_id = ray.get_runtime_context().get_node_id()
             gpu_ids = ray.get_gpu_ids()
-            print(f"hosseins: ray_utils RayWorkerWrapper -> get_node_and_gpu_ids() {node_id=}")
-            print(f"hosseins: ray_utils RayWorkerWrapper -> get_node_and_gpu_ids() {gpu_ids=}")
+            logger.info(f"hosseins: ray_utils RayWorkerWrapper -> get_node_and_gpu_ids() {node_id=}")
+            logger.info(f"hosseins: ray_utils RayWorkerWrapper -> get_node_and_gpu_ids() {gpu_ids=}")
             return node_id, gpu_ids
 
         def execute_model_spmd(
@@ -59,7 +59,7 @@ try:
                                       Tuple[bytes,
                                             Optional[IntermediateTensors]]]
         ) -> bytes:
-            print(f"hosseins: ray_utils RayWorkerWrapper -> execute_model_spmd() {req_or_tuple=}")
+            logger.info(f"hosseins: ray_utils RayWorkerWrapper -> execute_model_spmd() {req_or_tuple=}")
             
             """Execute model in SPMD fashion: used only when SPMD worker and
             compiled DAG are both enabled.
@@ -93,7 +93,7 @@ try:
             else:
                 output = self.output_encoder.encode(output)
                 
-            print(f"hosseins: ray_utils RayWorkerWrapper -> execute_model_spmd() {output=}")
+            logger.info(f"hosseins: ray_utils RayWorkerWrapper -> execute_model_spmd() {output=}")
 
             return output
 
@@ -109,14 +109,14 @@ except ImportError as e:
 
 
 def ray_is_available() -> bool:
-    print(f"hosseins: ray_utils ray_is_available()")
+    logger.info(f"hosseins: ray_utils ray_is_available()")
 
     """Returns True if Ray is available."""
     return ray is not None
 
 
 def assert_ray_available():
-    print(f"hosseins: ray_utils assert_ray_available()")
+    logger.info(f"hosseins: ray_utils assert_ray_available()")
 
     """Raise an exception if Ray is not available."""
     if ray is None:
@@ -126,8 +126,8 @@ def assert_ray_available():
 
 def _verify_bundles(placement_group: "PlacementGroup",
                     parallel_config: ParallelConfig, device_str: str):
-    print(f"hosseins: ray_utils _verify_bundles() {placement_group=}")
-    print(f"hosseins: ray_utils _verify_bundles() {parallel_config=}")
+    logger.info(f"hosseins: ray_utils _verify_bundles() {placement_group=}")
+    logger.info(f"hosseins: ray_utils _verify_bundles() {parallel_config=}")
     
     """Verify a given placement group has bundles located in the right place.
 
@@ -173,7 +173,7 @@ def _verify_bundles(placement_group: "PlacementGroup",
 
 
 def _wait_until_pg_ready(current_placement_group: "PlacementGroup"):
-    print(f"hosseins: ray_utils _wait_until_pg_ready()")
+    logger.info(f"hosseins: ray_utils _wait_until_pg_ready()")
 
     """Wait until a placement group is ready.
 
@@ -214,7 +214,7 @@ def _wait_until_pg_ready(current_placement_group: "PlacementGroup"):
 
 
 def _wait_until_pg_removed(current_placement_group: "PlacementGroup"):
-    print(f"hosseins: ray_utils _wait_until_pg_removed()")
+    logger.info(f"hosseins: ray_utils _wait_until_pg_removed()")
 
     ray.util.remove_placement_group(current_placement_group)
     s = time.time()
@@ -236,8 +236,8 @@ def initialize_ray_cluster(
     parallel_config: ParallelConfig,
     ray_address: Optional[str] = None,
 ):
-    print(f"hosseins: ray_utils initialize_ray_cluster {parallel_config=}")
-    print(f"hosseins: ray_utils initialize_ray_cluster {ray_address=}")
+    logger.info(f"hosseins: ray_utils initialize_ray_cluster {parallel_config=}")
+    logger.info(f"hosseins: ray_utils initialize_ray_cluster {ray_address=}")
     """Initialize the distributed cluster with Ray.
 
     it will connect to the Ray cluster and create a placement group
@@ -278,7 +278,7 @@ def initialize_ray_cluster(
         device_str = 'HPU'
     # Create placement group for worker processes
     current_placement_group = ray.util.get_current_placement_group()
-    print(f"hosseins: ray_utils initialize_ray_cluster {current_placement_group=}")
+    logger.info(f"hosseins: ray_utils initialize_ray_cluster {current_placement_group=}")
 
     if current_placement_group:
         # We are in a placement group
@@ -301,7 +301,7 @@ def initialize_ray_cluster(
                 f"Total number of devices: {device_bundles}.")
     else:
         num_devices_in_cluster = ray.cluster_resources().get(device_str, 0)
-        print(f"hosseins: ray_utils initialize_ray_cluster {num_devices_in_cluster=}")
+        logger.info(f"hosseins: ray_utils initialize_ray_cluster {num_devices_in_cluster=}")
 
         # Log a warning message and delay resource allocation failure response.
         # Avoid immediate rejection to allow user-initiated placement group
@@ -315,7 +315,7 @@ def initialize_ray_cluster(
         placement_group_specs: List[Dict[str, float]] = ([{
             device_str: 1.0
         } for _ in range(parallel_config.world_size)])
-        print(f"hosseins: ray_utils initialize_ray_cluster {placement_group_specs=}")
+        logger.info(f"hosseins: ray_utils initialize_ray_cluster {placement_group_specs=}")
 
         # vLLM engine is also a worker to execute model with an accelerator,
         # so it requires to have the device in a current node. Check if
@@ -323,9 +323,9 @@ def initialize_ray_cluster(
         current_ip = get_ip()
         current_node_id = ray.get_runtime_context().get_node_id()
         current_node_resource = available_resources_per_node()[current_node_id]
-        print(f"hosseins: ray_utils initialize_ray_cluster {current_ip=}")
-        print(f"hosseins: ray_utils initialize_ray_cluster {current_node_id=}")
-        print(f"hosseins: ray_utils initialize_ray_cluster {current_node_resource=}")
+        logger.info(f"hosseins: ray_utils initialize_ray_cluster {current_ip=}")
+        logger.info(f"hosseins: ray_utils initialize_ray_cluster {current_node_id=}")
+        logger.info(f"hosseins: ray_utils initialize_ray_cluster {current_node_resource=}")
         if current_node_resource.get(device_str, 0) < 1:
             raise ValueError(
                 f"Current node has no {device_str} available. "
@@ -352,9 +352,9 @@ def get_num_tpu_nodes() -> int:
     cluster_resources = ray.cluster_resources()
     total_tpus = int(cluster_resources["TPU"])
     tpus_per_node = TPUAcceleratorManager.get_current_node_num_accelerators()
-    print(f"hosseins: ray_utils get_num_tpu_nodes {total_tpus=}")
-    print(f"hosseins: ray_utils get_num_tpu_nodes {tpus_per_node=}")
-    print(f"hosseins: ray_utils get_num_tpu_nodes num_tpu_nodes={total_tpus // tpus_per_node}")
+    logger.info(f"hosseins: ray_utils get_num_tpu_nodes {total_tpus=}")
+    logger.info(f"hosseins: ray_utils get_num_tpu_nodes {tpus_per_node=}")
+    logger.info(f"hosseins: ray_utils get_num_tpu_nodes num_tpu_nodes={total_tpus // tpus_per_node}")
 
     assert total_tpus % tpus_per_node == 0
     return total_tpus // tpus_per_node
@@ -372,6 +372,6 @@ def get_num_nodes_in_placement_group() -> int:
                 for _, node in pg["bundles_to_node_id"].items():
                     nodes_in_pg.add(node)
         num_nodes = len(nodes_in_pg)
-    print(f"hosseins: ray_utils get_num_nodes_in_placement_group {num_nodes=}")
+    logger.info(f"hosseins: ray_utils get_num_nodes_in_placement_group {num_nodes=}")
 
     return num_nodes

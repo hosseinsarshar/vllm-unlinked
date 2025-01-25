@@ -243,7 +243,7 @@ def initialize_spmd():
 
     num_devices = xr.global_runtime_device_count()
     mesh_shape = (num_devices, )
-    print(f"hosseins: mesh_shape: [{mesh_shape=}]")
+    logger.info(f"hosseins: mesh_shape: [{mesh_shape=}]")
     device_ids = np.array(range(num_devices))
     _mesh = Mesh(device_ids, mesh_shape, ('axis', ))
     mesh = _mesh
@@ -253,10 +253,10 @@ def get_mesh():
     # return None
     global mesh
     if mesh is None:
-        print('hosseins: creating mesh')
+        logger.info('hosseins: creating mesh')
         mesh = initialize_spmd()
     else:
-        print('hosseins: returning mesh')
+        logger.info('hosseins: returning mesh')
         return mesh
 
 mesh = None
@@ -281,8 +281,8 @@ def shard_spmd(data, mesh, partition_spec, show_visual=True):
     xs.mark_sharding(data, mesh, partition_spec)
     xm.mark_step()
     sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
-    print(f"hosseins: shard_spmd() -> [{sharding=}]")
+    logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
 
     if show_visual:
-        print("hosseins: after sharding param")
+        logger.info("hosseins: after sharding param")
         generated_table = visualize_tensor_sharding(data, use_color=False)

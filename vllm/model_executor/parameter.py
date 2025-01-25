@@ -86,9 +86,9 @@ class _ColumnvLLMParameter(BasevLLMParameter):
         return self._output_dim
 
     def load_column_parallel_weight(self, loaded_weight: torch.Tensor):
-        print(f"hosseins: _ColumnvLLMParameter -> load_column_parallel_weight() [{loaded_weight.shape=}]")
-        print(f"hosseins: _ColumnvLLMParameter -> load_column_parallel_weight() [{self.data.shape=}]")
-        print(f"hosseins: _ColumnvLLMParameter -> load_column_parallel_weight() [{self.data.device=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_column_parallel_weight() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_column_parallel_weight() [{self.data.shape=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_column_parallel_weight() [{self.data.device=}]")
         
         tp_rank = get_tensor_model_parallel_rank()
         shard_size = self.data.shape[self.output_dim]
@@ -100,9 +100,9 @@ class _ColumnvLLMParameter(BasevLLMParameter):
         shard_spmd(self.data, self.mesh, get_col_parallel_partition_spec())
 
     def load_merged_column_weight(self, loaded_weight: torch.Tensor, **kwargs):
-        print(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{loaded_weight.shape=}]")
-        print(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{self.data.shape=}]")
-        print(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{self.data.device=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{self.data.shape=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_merged_column_weight() [{self.data.device=}]")
 
         shard_offset = kwargs.get("shard_offset")
         shard_size = kwargs.get("shard_size")
@@ -127,9 +127,9 @@ class _ColumnvLLMParameter(BasevLLMParameter):
 
 
     def load_qkv_weight(self, loaded_weight: torch.Tensor, **kwargs):
-        print(f"hosseins: _ColumnvLLMParameter -> load_qkv_weight() [{loaded_weight.shape=}]")
-        print(f"hosseins: _ColumnvLLMParameter -> load_qkv_weight() [{self.data.shape=}]")
-        print(f"hosseins: _ColumnvLLMParameter -> load_qkv_weight() [{self.data.device=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_qkv_weight() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_qkv_weight() [{self.data.shape=}]")
+        logger.info(f"hosseins: _ColumnvLLMParameter -> load_qkv_weight() [{self.data.device=}]")
 
         shard_offset = kwargs.get("shard_offset")
         shard_size = kwargs.get("shard_size")
@@ -175,9 +175,9 @@ class RowvLLMParameter(BasevLLMParameter):
         return self._input_dim
 
     def load_row_parallel_weight(self, loaded_weight: torch.Tensor):
-        print(f"hosseins: RowvLLMParameter -> load_row_parallel_weight() [{loaded_weight.shape=}]")
-        print(f"hosseins: RowvLLMParameter -> load_row_parallel_weight() [{self.data.shape=}]")
-        print(f"hosseins: RowvLLMParameter -> load_row_parallel_weight() [{self.data.device=}]")
+        logger.info(f"hosseins: RowvLLMParameter -> load_row_parallel_weight() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: RowvLLMParameter -> load_row_parallel_weight() [{self.data.shape=}]")
+        logger.info(f"hosseins: RowvLLMParameter -> load_row_parallel_weight() [{self.data.device=}]")
         tp_rank = get_tensor_model_parallel_rank()
         shard_size = self.data.shape[self.input_dim]
         loaded_weight = loaded_weight.narrow(self.input_dim,
@@ -247,19 +247,19 @@ class PerTensorScaleParameter(BasevLLMParameter):
     # For row parallel layers, no sharding needed
     # load weight into parameter as is
     def load_row_parallel_weight(self, *args, **kwargs):
-        print("hosseins: PerTensorScaleParameter -> load_row_parallel_weight()")
+        logger.info("hosseins: PerTensorScaleParameter -> load_row_parallel_weight()")
         super().load_row_parallel_weight(*args, **kwargs)
 
     def load_merged_column_weight(self, *args, **kwargs):
-        print("hosseins: PerTensorScaleParameter -> load_merged_column_weight()")
+        logger.info("hosseins: PerTensorScaleParameter -> load_merged_column_weight()")
         self._load_into_shard_id(*args, **kwargs)
 
     def load_qkv_weight(self, *args, **kwargs):
-        print("hosseins: PerTensorScaleParameter -> load_qkv_weight()")
+        logger.info("hosseins: PerTensorScaleParameter -> load_qkv_weight()")
         self._load_into_shard_id(*args, **kwargs)
 
     def load_column_parallel_weight(self, *args, **kwargs):
-        print("hosseins: PerTensorScaleParameter -> load_column_parallel_weight()")
+        logger.info("hosseins: PerTensorScaleParameter -> load_column_parallel_weight()")
         super().load_row_parallel_weight(*args, **kwargs)
 
     def _load_into_shard_id(self, loaded_weight: torch.Tensor,
@@ -268,9 +268,9 @@ class PerTensorScaleParameter(BasevLLMParameter):
         Slice the parameter data based on the shard id for 
         loading.
         """
-        print(f"hosseins: PerTensorScaleParameter -> _load_into_shard_id() [{loaded_weight.shape=}]")
-        print(f"hosseins: PerTensorScaleParameter -> _load_into_shard_id() [{self.data.shape=}]")
-        print(f"hosseins: PerTensorScaleParameter -> _load_into_shard_id() [{self.data.device=}]")
+        logger.info(f"hosseins: PerTensorScaleParameter -> _load_into_shard_id() [{loaded_weight.shape=}]")
+        logger.info(f"hosseins: PerTensorScaleParameter -> _load_into_shard_id() [{self.data.shape=}]")
+        logger.info(f"hosseins: PerTensorScaleParameter -> _load_into_shard_id() [{self.data.device=}]")
 
         param_data = self.data
         shard_id = self._shard_id_as_int(shard_id)

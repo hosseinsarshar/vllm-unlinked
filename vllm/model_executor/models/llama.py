@@ -55,9 +55,12 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, extract_layer_index,
                     is_pp_missing_parameter,
                     make_empty_intermediate_tensors_factory, make_layers,
                     maybe_prefix)
-import pdb
+from vllm.logger import init_logger
+
 
 from vllm.utils import get_tpu_info, get_cpu_memory_util
+
+logger = init_logger(__name__)
 
 import numpy as np
 
@@ -86,14 +89,14 @@ def estimate_tensor_memory(shape, dtype):
             raise ValueError(f"Unsupported PyTorch dtype: {dtype}")
         dtype = TORCH_TO_NUMPY_DTYPE[dtype]
 
-    print(f'hosseins: estimate_tensor_memory-> [{shape=}] - {dtype=}')
+    logger.info(f'hosseins: estimate_tensor_memory-> [{shape=}] - {dtype=}')
     # Get the number of elements in the tensor
     num_elements = np.prod(shape)
 
     # Get the size of each element in bytes
     dtype_size = np.dtype(dtype).itemsize
 
-    print(f'hosseins: estimate_tensor_memory-> [{num_elements=}] - {dtype_size=}')
+    logger.info(f'hosseins: estimate_tensor_memory-> [{num_elements=}] - {dtype_size=}')
 
     # Calculate total memory consumption
     memory_bytes = num_elements * dtype_size
@@ -113,10 +116,10 @@ class LlamaMLP(nn.Module):
         prefix: str = "",
     ) -> None:
         super().__init__()
-        # print("***************** REACHED pdb.set_trace() *****************")
+        # logger.info("***************** REACHED pdb.set_trace() *****************")
         # pdb.set_trace()
 
-        print(f"hosseins: LlamaMLP -> __init__ : [{hidden_size=}]")
+        logger.info(f"hosseins: LlamaMLP -> __init__ : [{hidden_size=}]")
 
         self.gate_up_proj = MergedColumnParallelLinear(
             input_size=hidden_size,
@@ -138,7 +141,7 @@ class LlamaMLP(nn.Module):
         self.act_fn = SiluAndMul()
 
     def forward(self, x):
-        # print(f"hossein: LlamaMLP -> forward")
+        # logger.info(f"hossein: LlamaMLP -> forward")
 
         x, _ = self.gate_up_proj(x)
         x = self.act_fn(x)
@@ -164,7 +167,7 @@ class LlamaAttention(nn.Module):
     ) -> None:
         super().__init__()
         layer_idx = extract_layer_index(prefix)
-        print(f"hosseins: LlamaAttention -> __init__() : [{layer_idx=}]")
+        logger.info(f"hosseins: LlamaAttention -> __init__() : [{layer_idx=}]")
         self.hidden_size = hidden_size
         tp_size = get_tensor_model_parallel_world_size()
         self.total_num_heads = num_heads
@@ -252,7 +255,7 @@ class LlamaAttention(nn.Module):
         kv_cache: torch.Tensor,
         attn_metadata: AttentionMetadata,
     ) -> torch.Tensor:
-        # print(f"hossein: LlamaAttention -> forward")
+        # logger.info(f"hossein: LlamaAttention -> forward")
         qkv, _ = self.qkv_proj(hidden_states)
         q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
         q, k = self.rotary_emb(positions, q, k)
@@ -270,7 +273,7 @@ class LlamaDecoderLayer(nn.Module):
         quant_config: Optional[QuantizationConfig] = None,
         prefix: str = "",
     ) -> None:
-        print(f"hosseins: LlamaDecoderLayer -> __init__() {config=}")
+        logger.info(f"hosseins: LlamaDecoderLayer -> __init__() {config=}")
         super().__init__()
         self.hidden_size = config.hidden_size
         rope_theta = getattr(config, "rope_theta", 10000)
@@ -321,7 +324,7 @@ class LlamaDecoderLayer(nn.Module):
         residual: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         # Self Attention
-        # print(f"hossein: LlamaDecoderLayer -> forward")
+        # logger.info(f"hossein: LlamaDecoderLayer -> forward")
         if residual is None:
             residual = hidden_states
             hidden_states = self.input_layernorm(hidden_states)
@@ -349,7 +352,7 @@ class LlamaModel(nn.Module):
                  prefix: str = "",
                  layer_type: Type[LlamaDecoderLayer] = LlamaDecoderLayer):
         super().__init__()
-        print(f"hosseins: LlamaModel -> __init__ : [{vllm_config=}]")
+        logger.info(f"hosseins: LlamaModel -> __init__ : [{vllm_config=}]")
         self.mesh = get_mesh()
         config = vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
@@ -380,9 +383,9 @@ class LlamaModel(nn.Module):
                                       prefix=prefix),
             prefix=f"{prefix}.layers",
         )
-        print(f"hosseins: LlamaModel -> __init__ [{self.start_layer=}]")
-        print(f"hosseins: LlamaModel -> __init__ [{self.end_layer=}]")
-        print(f"hosseins: LlamaModel -> __init__ [{self.layers=}]")
+        logger.info(f"hosseins: LlamaModel -> __init__ [{self.start_layer=}]")
+        logger.info(f"hosseins: LlamaModel -> __init__ [{self.end_layer=}]")
+        logger.info(f"hosseins: LlamaModel -> __init__ [{self.layers=}]")
         if get_pp_group().is_last_rank:
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         else:
@@ -393,11 +396,11 @@ class LlamaModel(nn.Module):
                 ["hidden_states", "residual"], config.hidden_size))
 
     def get_input_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
-        print(f"hosseins: LlamaModel -> get_input_embeddings : [{len(input_ids)=}]")
+        logger.info(f"hosseins: LlamaModel -> get_input_embeddings : [{len(input_ids)=}]")
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
-        print(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
+        logger.info(f"hosseins: LlamaModel -> get_input_embeddings() [{tpu_activities=}]")
+        logger.info(f"hosseins: LlamaModel -> get_input_embeddings() [{cpu_mem_util=}]")
 
         return self.embed_tokens(input_ids)
 
@@ -410,7 +413,7 @@ class LlamaModel(nn.Module):
         intermediate_tensors: Optional[IntermediateTensors],
         inputs_embeds: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, IntermediateTensors]:
-        # print(f"hossein: LlamaModel -> forward")
+        # logger.info(f"hossein: LlamaModel -> forward")
         if get_pp_group().is_first_rank:
             if inputs_embeds is not None:
                 hidden_states = inputs_embeds
@@ -439,7 +442,7 @@ class LlamaModel(nn.Module):
 
     def load_weights(self, weights: Iterable[Tuple[str,
                                                    torch.Tensor]]) -> Set[str]:
-        print(f"hosseins: LlamaModel -> load_weights()")
+        logger.info(f"hosseins: LlamaModel -> load_weights()")
         
         stacked_params_mapping = [
             # (param_name, shard_name, shard_id)
@@ -451,30 +454,30 @@ class LlamaModel(nn.Module):
         ]
         params_dict = dict(self.named_parameters())
         loaded_params: Set[str] = set()
-        # print(f"hosseins: LlamaModel -> load_weights() [{params_dict.keys()=}]")
+        # logger.info(f"hosseins: LlamaModel -> load_weights() [{params_dict.keys()=}]")
         total_bytes = 0
         for key in params_dict:
-            print(f'hosseins: LlamaModel -> load_weights() [{key=}]')
-            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].shape=}]')
-            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].device=}]')
-            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].dtype=}]')
+            logger.info(f'hosseins: LlamaModel -> load_weights() [{key=}]')
+            logger.info(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].shape=}]')
+            logger.info(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].device=}]')
+            logger.info(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].dtype=}]')
             param_bytes = estimate_tensor_memory(params_dict[key].shape, params_dict[key].dtype)
-            print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{param_bytes=}]')
+            logger.info(f'hosseins: LlamaModel -> load_weights() [{key=}] [{param_bytes=}]')
             total_bytes += param_bytes
-            # print(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].data=}]')
+            # logger.info(f'hosseins: LlamaModel -> load_weights() [{key=}] [{params_dict[key].data=}]')
 
-        print(f'hosseins: LlamaModel -> load_weights() [{total_bytes=}]')
+        logger.info(f'hosseins: LlamaModel -> load_weights() [{total_bytes=}]')
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
-        print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
+        logger.info(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
+        logger.info(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
 
         total_loaded_params = 0
         processed_params = set()
         for name, loaded_weight in weights:
-            print(f"hosseins: LlamaModel -> load_weights() [{name=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{name=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
             
             if "rotary_emb.inv_freq" in name:
                 continue
@@ -486,9 +489,9 @@ class LlamaModel(nn.Module):
             if scale_name := get_compressed_tensors_cache_scale(name):
                 # Loading kv cache scales for compressed-tensors quantization
                 param = params_dict[scale_name]
-                print(f"hosseins: LlamaModel -> load_weights() [{scale_name=}]")
-                print(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
-                print(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
+                logger.info(f"hosseins: LlamaModel -> load_weights() [{scale_name=}]")
+                logger.info(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
+                logger.info(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
 
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
@@ -499,7 +502,7 @@ class LlamaModel(nn.Module):
                 total_loaded_params += param_bytes
                 processed_params.add(scale_name)
 
-                print(f"hosseins: LlamaModel -> load_weights() - scale_name := get_compressed_tensors_cache_scale(name)")
+                logger.info(f"hosseins: LlamaModel -> load_weights() - scale_name := get_compressed_tensors_cache_scale(name)")
 
                 visualize_tensor_sharding(param, use_color=False)
 
@@ -516,14 +519,14 @@ class LlamaModel(nn.Module):
                     continue
 
                 param = params_dict[name]
-                print(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}] [{shard_id=}]")
+                logger.info(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}] [{shard_id=}]")
                 weight_loader = param.weight_loader
                 weight_loader(param, loaded_weight, shard_id)
                 param_bytes = estimate_tensor_memory(loaded_weight.shape, loaded_weight.dtype)
                 total_loaded_params += param_bytes
                 processed_params.add(name)
                 
-                print(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping [{param.device=}]")
+                logger.info(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping [{param.device=}]")
                 shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
 
                 visualize_tensor_sharding(param, use_color=False)
@@ -542,7 +545,7 @@ class LlamaModel(nn.Module):
                     continue
 
                 param = params_dict[name]
-                print(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}]")
+                logger.info(f"hosseins: LlamaModel -> load_weights() X calling weight_loader() for [{name=}] [{loaded_weight.shape=}] [{param.shape=}]")
 
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
@@ -551,37 +554,37 @@ class LlamaModel(nn.Module):
                 param_bytes = estimate_tensor_memory(loaded_weight.shape, loaded_weight.dtype)
                 total_loaded_params += param_bytes
                 processed_params.add(name)
-                print(f"hosseins: LlamaModel -> load_weights() - else:")
+                logger.info(f"hosseins: LlamaModel -> load_weights() - else:")
                 visualize_tensor_sharding(param, use_color=False)
 
             loaded_params.add(name)
             
-            print(f"hosseins: LlamaModel -> load_weights() [{weight_name=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{type(param)=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape==param.shape=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{type(loaded_weight)=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{param_name=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{weight_name=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{type(param)=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.shape==param.shape=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{loaded_weight.device=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{type(loaded_weight)=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{param_name=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{param.shape=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{param.device=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{weight_loader=}]")
             tpu_activities = get_tpu_info(0)
             cpu_mem_util = get_cpu_memory_util()
-            print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
-            print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
+            logger.info(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
 
-        print(f'hosseins: LlamaModel -> load_weights() [{len(loaded_params)=}]')
-        print(f"hosseins: LlamaModel -> load_weights() [{loaded_params=}]")
-        print(f'hosseins: LlamaModel -> load_weights() [{len(processed_params)=}]')
-        print(f'hosseins: LlamaModel -> load_weights() [{processed_params=}]')
-        print(f'hosseins: LlamaModel -> load_weights() [{len(params_dict.keys())=}]')
-        print(f'hosseins: LlamaModel -> load_weights() [{total_loaded_params=}]')
+        logger.info(f'hosseins: LlamaModel -> load_weights() [{len(loaded_params)=}]')
+        logger.info(f"hosseins: LlamaModel -> load_weights() [{loaded_params=}]")
+        logger.info(f'hosseins: LlamaModel -> load_weights() [{len(processed_params)=}]')
+        logger.info(f'hosseins: LlamaModel -> load_weights() [{processed_params=}]')
+        logger.info(f'hosseins: LlamaModel -> load_weights() [{len(params_dict.keys())=}]')
+        logger.info(f'hosseins: LlamaModel -> load_weights() [{total_loaded_params=}]')
 
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
-        print(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
+        logger.info(f"hosseins: LlamaModel -> load_weights() [{tpu_activities=}]")
+        logger.info(f"hosseins: LlamaModel -> load_weights() [{cpu_mem_util=}]")
         return loaded_params
 
     # If this function is called, it should always initialize KV cache scale
@@ -591,7 +594,7 @@ class LlamaModel(nn.Module):
         tp_size = get_tensor_model_parallel_world_size()
         tp_rank = get_tensor_model_parallel_rank()
 
-        print(f"hosseins: LlamaModel -> load_kv_cache_scales - {tp_size=}")
+        logger.info(f"hosseins: LlamaModel -> load_kv_cache_scales - {tp_size=}")
 
         for layer_idx, scaling_factor in kv_cache_scales_loader(
                 quantization_param_path, tp_rank, tp_size,
@@ -661,7 +664,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
     }
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
-        print(f"hosseins: LlamaForCausalLM -> __init__() {vllm_config=}")
+        logger.info(f"hosseins: LlamaForCausalLM -> __init__() {vllm_config=}")
         super().__init__()
         # mesh = get_mesh()
         config = vllm_config.model_config.hf_config
@@ -673,7 +676,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         self.model = self._init_model(vllm_config=vllm_config,
                                       prefix=maybe_prefix(prefix, "model"))
 
-        print(f"hosseins: LlamaForCausalLM -> __init__() {get_pp_group().is_last_rank=}")
+        logger.info(f"hosseins: LlamaForCausalLM -> __init__() {get_pp_group().is_last_rank=}")
 
         if get_pp_group().is_last_rank:
             self.unpadded_vocab_size = config.vocab_size
@@ -709,12 +712,12 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
             self.model.make_empty_intermediate_tensors)
 
     def _init_model(self, vllm_config: VllmConfig, prefix: str = ""):
-        print(f"hosseins: LlamaForCausalLM -> _init_model - {vllm_config=}")
+        logger.info(f"hosseins: LlamaForCausalLM -> _init_model - {vllm_config=}")
 
         return LlamaModel(vllm_config=vllm_config, prefix=prefix)
 
     def get_input_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
-        print(f"hosseins: LlamaForCausalLM -> get_input_embeddings - {input_ids=}")
+        logger.info(f"hosseins: LlamaForCausalLM -> get_input_embeddings - {input_ids=}")
         
         return self.model.get_input_embeddings(input_ids)
 
@@ -727,7 +730,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         intermediate_tensors: Optional[IntermediateTensors] = None,
         inputs_embeds: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, IntermediateTensors]:
-        print(f"hosseins: LlamaForCausalLM -> forward")
+        logger.info(f"hosseins: LlamaForCausalLM -> forward")
         model_output = self.model(input_ids, positions, kv_caches,
                                   attn_metadata, intermediate_tensors,
                                   inputs_embeds)
@@ -738,23 +741,23 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         hidden_states: torch.Tensor,
         sampling_metadata: SamplingMetadata,
     ) -> Optional[torch.Tensor]:
-        print(f"hosseins: LlamaForCausalLM -> compute_logits")
+        logger.info(f"hosseins: LlamaForCausalLM -> compute_logits")
         logits = self.logits_processor(self.lm_head, hidden_states,
                                        sampling_metadata)
         
-        print(f"hosseins: LlamaForCausalLM -> compute_logits() [{logits.shape=}]")
+        logger.info(f"hosseins: LlamaForCausalLM -> compute_logits() [{logits.shape=}]")
 
         return logits
 
     def sample(self, logits: torch.Tensor,
                sampling_metadata: SamplingMetadata) -> Optional[SamplerOutput]:
-        print(f"hosseins: LlamaForCausalLM -> sample")
+        logger.info(f"hosseins: LlamaForCausalLM -> sample")
         next_tokens = self.sampler(logits, sampling_metadata)
         return next_tokens
 
     def load_weights(self, weights: Iterable[Tuple[str,
                                                    torch.Tensor]]) -> Set[str]:
-        print(f"hosseins: LlamaForCausalLM -> load_weights()")
+        logger.info(f"hosseins: LlamaForCausalLM -> load_weights()")
         loader = AutoWeightsLoader(
             self,
             skip_prefixes=(["lm_head."]
@@ -765,7 +768,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
             for name, loaded_weight in weights)
 
     def load_kv_cache_scales(self, quantization_param_path: str) -> None:
-        print(f"hosseins: LlamaForCausalLM -> load_kv_cache_scales {quantization_param_path=}")
+        logger.info(f"hosseins: LlamaForCausalLM -> load_kv_cache_scales {quantization_param_path=}")
         self.model.load_kv_cache_scales(quantization_param_path)
 
     # This function is used to remap the mistral format as
@@ -775,7 +778,7 @@ class LlamaForCausalLM(nn.Module, SupportsLoRA, SupportsPP):
         name: str,
         loaded_weight: torch.Tensor,
     ) -> Tuple[str, torch.Tensor]:
-        print(f"hosseins: LlamaForCausalLM -> maybe_remap_mistral {name=}")
+        logger.info(f"hosseins: LlamaForCausalLM -> maybe_remap_mistral {name=}")
         def permute(w: torch.Tensor, n_heads: int):
             attn_in = self.config.head_dim * n_heads
             attn_out = self.config.hidden_size

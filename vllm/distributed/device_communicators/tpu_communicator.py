@@ -13,11 +13,14 @@ if current_platform.is_tpu():
 
     from vllm.executor import ray_utils
 
+from vllm.logger import init_logger
+logger = init_logger(__name__)
+
 
 class TpuCommunicator:
 
     def __init__(self, group: ProcessGroup):
-        print(f"hosseins: TpuCommunicator __init__() {group=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {group=}")
 
         if not current_platform.is_tpu():
             self.disabled = True
@@ -30,8 +33,8 @@ class TpuCommunicator:
         global_rank = dist.get_rank(group)
         global_world_size = dist.get_world_size(group)
 
-        print(f"hosseins: TpuCommunicator __init__() {global_rank=}")
-        print(f"hosseins: TpuCommunicator __init__() {global_world_size=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {global_rank=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {global_world_size=}")
         # Calculate how many TPU nodes are in the current deployment. This
         # is the Ray placement group if it is deployed with Ray. Default
         # to the number of TPU nodes in the Ray cluster. The number of TPU
@@ -39,17 +42,17 @@ class TpuCommunicator:
         # number of TPU accelerators per node, to account for clusters
         # with both CPUs and TPUs.
         num_nodes = ray_utils.get_num_tpu_nodes()
-        print(f"hosseins: TpuCommunicator __init__() {num_nodes=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {num_nodes=}")
 
         num_nodes_in_pg = ray_utils.get_num_nodes_in_placement_group()
         if num_nodes_in_pg > 0:
             num_nodes = num_nodes_in_pg
-        print(f"hosseins: TpuCommunicator __init__() {num_nodes_in_pg=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {num_nodes_in_pg=}")
 
         local_world_size = global_world_size // num_nodes
         local_rank = global_rank % local_world_size
-        print(f"hosseins: TpuCommunicator __init__() {local_world_size=}")
-        print(f"hosseins: TpuCommunicator __init__() {local_rank=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {local_world_size=}")
+        logger.info(f"hosseins: TpuCommunicator __init__() {local_rank=}")
 
         # Ensure environment variables are set for multihost deployments.
         # On GKE, this is needed for libtpu and TPU driver to know which TPU
@@ -63,11 +66,11 @@ class TpuCommunicator:
         xr._init_world_size_ordinal()
 
     def all_reduce(self, x: torch.Tensor) -> torch.Tensor:
-        print(f"hosseins: TpuCommunicator all_reduce()")
+        logger.info(f"hosseins: TpuCommunicator all_reduce()")
 
         return xm.all_reduce(xm.REDUCE_SUM, x)
 
     def all_gather(self, x: torch.Tensor, dim: int = -1) -> torch.Tensor:
-        print(f"hosseins: TpuCommunicator all_gather() {dim=}")
+        logger.info(f"hosseins: TpuCommunicator all_gather() {dim=}")
         assert dim == -1, "TPUs only support dim=-1 for all-gather."
         return xm.all_gather(x, dim=dim)

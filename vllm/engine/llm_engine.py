@@ -219,7 +219,7 @@ class LLMEngine:
         mm_registry: MultiModalRegistry = MULTIMODAL_REGISTRY,
         use_cached_outputs: bool = False,
     ) -> None:
-        print(f"hosseins: LLMEngine -> __init__() {vllm_config=}")
+        logger.info(f"hosseins: LLMEngine -> __init__() {vllm_config=}")
 
         self.vllm_config = vllm_config
         self.model_config = vllm_config.model_config
@@ -279,16 +279,16 @@ class LLMEngine:
 
         # tpu_activities = get_tpu_info(0)
         # cpu_mem_util = get_cpu_memory_util()
-        # print(f"hosseins: LLMEngine -> __init__() 1 [{tpu_activities=}]")
-        # print(f"hosseins: LLMEngine -> __init__() 1 [{cpu_mem_util=}]")
+        # logger.info(f"hosseins: LLMEngine -> __init__() 1 [{tpu_activities=}]")
+        # logger.info(f"hosseins: LLMEngine -> __init__() 1 [{cpu_mem_util=}]")
 
         if self.model_config.runner_type != "pooling":
             self._initialize_kv_caches()
 
         tpu_activities = get_tpu_info(0)
         cpu_mem_util = get_cpu_memory_util()
-        print(f"hosseins: LLMEngine -> __init__() 2 [{tpu_activities=}]")
-        print(f"hosseins: LLMEngine -> __init__() 2 [{cpu_mem_util=}]")
+        logger.info(f"hosseins: LLMEngine -> __init__() 2 [{tpu_activities=}]")
+        logger.info(f"hosseins: LLMEngine -> __init__() 2 [{cpu_mem_util=}]")
 
         # If usage stat is enabled, collect relevant info.
         if is_usage_stats_enabled():
@@ -421,7 +421,7 @@ class LLMEngine:
         self.seq_id_to_seq_group: Dict[str, SequenceGroupBase] = {}
 
     def _initialize_kv_caches(self) -> None:
-        print(f"hosseins: LLMEngine -> _initialize_kv_caches()")
+        logger.info(f"hosseins: LLMEngine -> _initialize_kv_caches()")
 
         """Initialize the KV cache in the worker(s).
 
@@ -451,7 +451,7 @@ class LLMEngine:
     @classmethod
     def _get_executor_cls(cls,
                           engine_config: VllmConfig) -> Type[ExecutorBase]:
-        print(f"hosseins: LLMEngine -> _get_executor_cls(): {engine_config=}")
+        logger.info(f"hosseins: LLMEngine -> _get_executor_cls(): {engine_config=}")
         distributed_executor_backend = (
             engine_config.parallel_config.distributed_executor_backend)
         # Initialize the cluster and specify the executor class.
@@ -519,7 +519,7 @@ class LLMEngine:
             from vllm.executor.gpu_executor import GPUExecutor
             executor_class = GPUExecutor
 
-        print(f"hosseins: LLMEngine -> _get_executor_cls(): {executor_class=}")
+        logger.info(f"hosseins: LLMEngine -> _get_executor_cls(): {executor_class=}")
         
         return executor_class
 
@@ -530,8 +530,8 @@ class LLMEngine:
         usage_context: UsageContext = UsageContext.ENGINE_CONTEXT,
         stat_loggers: Optional[Dict[str, StatLoggerBase]] = None,
     ) -> "LLMEngine":
-        print(f"hosseins: LLMEngine -> from_engine_args(): {engine_args=}")
-        print(f"hosseins: LLMEngine -> from_engine_args(): {usage_context=}")
+        logger.info(f"hosseins: LLMEngine -> from_engine_args(): {engine_args=}")
+        logger.info(f"hosseins: LLMEngine -> from_engine_args(): {usage_context=}")
 
         """Creates an LLM engine from the engine arguments."""
         # Create the engine configs.
@@ -563,7 +563,7 @@ class LLMEngine:
         self,
         group_type: Type[_G] = BaseTokenizerGroup,
     ) -> _G:
-        print(f"hosseins: LLMEngine -> get_tokenizer_group() {group_type=}")
+        logger.info(f"hosseins: LLMEngine -> get_tokenizer_group() {group_type=}")
         tokenizer_group = self.tokenizer
 
         if tokenizer_group is None:
@@ -580,11 +580,11 @@ class LLMEngine:
         self,
         lora_request: Optional[LoRARequest] = None,
     ) -> AnyTokenizer:
-        print(f"hosseins: LLMEngine -> get_tokenizer()")
+        logger.info(f"hosseins: LLMEngine -> get_tokenizer()")
         return self.get_tokenizer_group().get_lora_tokenizer(lora_request)
 
     def _init_tokenizer(self) -> BaseTokenizerGroup:
-        print(f"hosseins: LLMEngine -> _init_tokenizer()")
+        logger.info(f"hosseins: LLMEngine -> _init_tokenizer()")
         return init_tokenizer_from_configs(
             model_config=self.model_config,
             scheduler_config=self.scheduler_config,
@@ -592,7 +592,7 @@ class LLMEngine:
             lora_config=self.lora_config)
 
     def _verify_args(self) -> None:
-        print(f"hosseins: LLMEngine -> _verify_args()")
+        logger.info(f"hosseins: LLMEngine -> _verify_args()")
         self.model_config.verify_with_parallel_config(self.parallel_config)
         self.cache_config.verify_with_parallel_config(self.parallel_config)
         if self.lora_config:
@@ -614,7 +614,7 @@ class LLMEngine:
         trace_headers: Optional[Mapping[str, str]] = None,
         priority: int = 0,
     ) -> Optional[SequenceGroup]:
-        print(f"hosseins: LLMEngine -> _add_processed_request()")
+        logger.info(f"hosseins: LLMEngine -> _add_processed_request()")
         """Add a processed request to the engine's request pool.
         return the created sequence group.
         """
@@ -1030,7 +1030,7 @@ class LLMEngine:
     def _process_model_outputs(self,
                                ctx: SchedulerContext,
                                request_id: Optional[str] = None) -> None:
-        print(f"hosseins: LLMEngine -> _process_model_outputs()")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs()")
         """Apply the model output to the sequences in the scheduled seq groups
         and return responses.
 
@@ -1039,11 +1039,11 @@ class LLMEngine:
         """
 
         now = time.time()
-        print(f"hosseins: LLMEngine -> _process_model_outputs() -1 - [{len(ctx.output_queue)}]")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() -1 - [{len(ctx.output_queue)}]")
 
         if len(ctx.output_queue) == 0:
             return None
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 0")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 0")
 
         # Get pending async postprocessor
         if request_id:
@@ -1051,19 +1051,19 @@ class LLMEngine:
             # (since later we will process all of the rest)
             (outputs, seq_group_metadata_list, scheduler_outputs, is_async,
              is_last_step, is_first_step_output, skip) = ctx.output_queue[0]
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 1")            
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 1")            
         else:
             (outputs, seq_group_metadata_list, scheduler_outputs, is_async,
              is_last_step, is_first_step_output,
              skip) = ctx.output_queue.popleft()
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 1")            
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 1")            
             
 
         # Sanity check
         assert len(seq_group_metadata_list) == len(
             scheduler_outputs.scheduled_seq_groups)
         
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 2")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 2")
 
         has_multiple_outputs: bool = len(outputs) > 1
         outputs_by_sequence_group: List[List[SequenceGroupOutput]]
@@ -1080,7 +1080,7 @@ class LLMEngine:
         else:
             outputs_by_sequence_group = outputs
 
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 3")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 3")
 
         # Determine the requests we need to operate on
         if request_id:
@@ -1099,7 +1099,7 @@ class LLMEngine:
         else:
             indices = range(len(seq_group_metadata_list))  # type: ignore
 
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 4")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 4")
         
         finished_before: List[int] = []
         finished_now: List[int] = []
@@ -1111,7 +1111,7 @@ class LLMEngine:
             scheduled_seq_group = scheduler_outputs.scheduled_seq_groups[i]
 
             seq_group: SequenceGroup = scheduled_seq_group.seq_group
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 4 - [{i}]")
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 4 - [{i}]")
 
             if seq_group.is_finished():
                 finished_before.append(i)
@@ -1122,7 +1122,7 @@ class LLMEngine:
                 output = outputs_by_sequence_group[i]
             else:
                 output = [outputs_by_sequence_group[0][i]]
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 5 - [{i}]")
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 5 - [{i}]")
 
             if not is_async:
                 if self.scheduler_config.is_multi_step:
@@ -1132,7 +1132,7 @@ class LLMEngine:
                 else:
                     seq_group.update_num_computed_tokens(
                         seq_group_meta.token_chunk_size or 0)
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 6 - [{i}]")
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 6 - [{i}]")
 
             if outputs:
                 for o in outputs:
@@ -1150,7 +1150,7 @@ class LLMEngine:
                         else:
                             seq_group.metrics.model_execute_time = (
                                 o.model_execute_time)
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 7 - [{i}]")
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 7 - [{i}]")
 
             if self.model_config.runner_type == "pooling":
                 self._process_sequence_group_outputs(seq_group, output)
@@ -1162,7 +1162,7 @@ class LLMEngine:
 
             if seq_group.is_finished():
                 finished_now.append(i)
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 8")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 8")
 
         # Generate outputs for the requests that finished this iteration
         for i in finished_now:
@@ -1178,7 +1178,7 @@ class LLMEngine:
                 use_cache=self.use_cached_outputs)
             if request_output:
                 ctx.request_outputs.append(request_output)
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 9 [{i}]")
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 9 [{i}]")
 
         # When we process a single request, we skip it for the next time,
         # and invoke the request output callback (if there was final output)
@@ -1192,7 +1192,7 @@ class LLMEngine:
                 ctx.request_outputs.clear()
             return
         
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 10")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 10")
 
         # Free currently finished requests
         if finished_now:
@@ -1208,7 +1208,7 @@ class LLMEngine:
                 ctx.request_outputs.clear()
             return
         
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 11")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 11")
 
         # Create the outputs
         for i in indices:
@@ -1228,7 +1228,7 @@ class LLMEngine:
             if request_output:
                 ctx.request_outputs.append(request_output)
 
-            print(f"hosseins: LLMEngine -> _process_model_outputs() 12 [{i}]")
+            logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 12 [{i}]")
 
         # For multi-step with streaming, create outputs each iteration
         if not is_last_step and ctx.multi_step_stream_outputs:
@@ -1237,7 +1237,7 @@ class LLMEngine:
                 self.process_request_outputs_callback(ctx.request_outputs)
                 ctx.request_outputs.clear()
             return
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 13")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 13")
 
         for seq_group in scheduler_outputs.ignored_seq_groups:
             params = seq_group.sampling_params
@@ -1252,14 +1252,14 @@ class LLMEngine:
             )
             if request_output:
                 ctx.request_outputs.append(request_output)
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 14")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 14")
 
         # Immediately process request outputs here (if callback is given)
         if (ctx.request_outputs
                 and self.process_request_outputs_callback is not None):
             self.process_request_outputs_callback(ctx.request_outputs)
             ctx.request_outputs.clear()
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 15")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 15")
 
         # For async case, we need to record the stats here.
         # For non-async case, the stats are done in the
@@ -1271,7 +1271,7 @@ class LLMEngine:
 
             # Tracing
             self.do_tracing(scheduler_outputs, finished_before)
-        print(f"hosseins: LLMEngine -> _process_model_outputs() 16")
+        logger.info(f"hosseins: LLMEngine -> _process_model_outputs() 16")
 
         return None
 
@@ -1279,7 +1279,7 @@ class LLMEngine:
             self, output: List[SamplerOutput],
             seq_group_metadata_list: List[SequenceGroupMetadata],
             scheduled_seq_groups: List[ScheduledSequenceGroup]) -> None:
-        print(f"hosseins: LLMEngine -> _advance_to_next_step()")
+        logger.info(f"hosseins: LLMEngine -> _advance_to_next_step()")
         """Given model output from a single run, append the tokens to the
         sequences. This is normally done inside output processor, but it is
         required if the worker is to perform async forward pass to next step.
@@ -1321,7 +1321,7 @@ class LLMEngine:
                     seq.append_token_id(sample.output_token, sample.logprobs)
 
     def step(self) -> List[Union[RequestOutput, PoolingRequestOutput]]:
-        print(f"hosseins: LLMEngine -> step()")
+        logger.info(f"hosseins: LLMEngine -> step()")
         """Performs one decoding iteration and returns newly generated results.
 
         .. figure:: https://i.imgur.com/sv2HssD.png
@@ -1529,7 +1529,7 @@ class LLMEngine:
     def _has_remaining_steps(
         self, seq_group_metadata_list: Optional[List[SequenceGroupMetadata]]
     ) -> bool:
-        print(f"hosseins: LLMEngine -> _has_remaining_steps()")
+        logger.info(f"hosseins: LLMEngine -> _has_remaining_steps()")
         if (not self.scheduler_config.is_multi_step
                 or not seq_group_metadata_list):
             return False

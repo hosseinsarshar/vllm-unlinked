@@ -87,7 +87,7 @@ class AutoWeightsLoader:
         skip_prefixes: Optional[List[str]] = None,
         ignore_unexpected_prefixes: Optional[List[str]] = None,
     ) -> None:
-        print("hosseins: AutoWeightsLoader -> __init__()")
+        logger.info("hosseins: AutoWeightsLoader -> __init__()")
         super().__init__()
 
         self.module = module
@@ -232,7 +232,7 @@ class AutoWeightsLoader:
         *,
         mapper: Optional[WeightsMapper] = None,
     ) -> Set[str]:
-        print(f"hosseins: AutoWeightsLoader -> load_weights()")
+        logger.info(f"hosseins: AutoWeightsLoader -> load_weights()")
         if mapper is not None:
             weights = mapper.apply(weights)
 
@@ -548,9 +548,9 @@ def make_layers(
     layer_fn: LayerFn,
     prefix: str,
 ) -> Tuple[int, int, torch.nn.ModuleList]:
-    print(f"hosseins: utils.py -> make_layers() [{num_hidden_layers=}]")
-    print(f"hosseins: utils.py -> make_layers() [{layer_fn=}]")
-    print(f"hosseins: utils.py -> make_layers() [{prefix=}]")
+    logger.info(f"hosseins: utils.py -> make_layers() [{num_hidden_layers=}]")
+    logger.info(f"hosseins: utils.py -> make_layers() [{layer_fn=}]")
+    logger.info(f"hosseins: utils.py -> make_layers() [{prefix=}]")
     """
     Make a list of layers with the given layer function, taking
     pipeline parallelism into account.
@@ -567,7 +567,7 @@ def make_layers(
             for idx in range(start_layer, end_layer)
         ] + [PPMissingLayer() for _ in range(end_layer, num_hidden_layers)])
     
-    print(f"hosseins: utils.py -> make_layers() [{modules=}]")
+    logger.info(f"hosseins: utils.py -> make_layers() [{modules=}]")
     
     return start_layer, end_layer, modules
 

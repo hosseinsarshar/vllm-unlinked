@@ -962,7 +962,7 @@ class MllamaTextModel(nn.Module):
     base_model_prefix = "model"
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
-        print(f"hosseins: MllamaTextModel -> __init__() {vllm_config=}")
+        logger.info(f"hosseins: MllamaTextModel -> __init__() {vllm_config=}")
 
         super().__init__()
 
@@ -1053,7 +1053,7 @@ class MllamaForCausalLM(nn.Module):
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
-        print(f"hosseins: MllamaForCausalLM -> __init__() {vllm_config=}")
+        logger.info(f"hosseins: MllamaForCausalLM -> __init__() {vllm_config=}")
 
         config = vllm_config.model_config.hf_config.text_config
         quant_config = vllm_config.quant_config
@@ -1114,7 +1114,7 @@ class MllamaForConditionalGeneration(nn.Module, SupportsMultiModal):
     }
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
-        print(f"hosseins: MllamaForConditionalGeneration -> __init__() {config=}")
+        logger.info(f"hosseins: MllamaForConditionalGeneration -> __init__() {config=}")
 
         super().__init__()
         config = vllm_config.model_config.hf_config

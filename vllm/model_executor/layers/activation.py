@@ -17,6 +17,9 @@ from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, ge
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
+from vllm.logger import init_logger
+logger = init_logger(__name__)
+
 
 @CustomOp.register("fatrelu_and_mul")
 class FatreluAndMul(CustomOp):
@@ -256,7 +259,7 @@ class ScaledActivation(nn.Module):
         return self.act(x) / self.scales
 
     def weight_loader(self, param: nn.Parameter, loaded_weight: torch.Tensor):
-        print(f"hosseins: ScaledActivation -> weight_loader() [{self.input_is_parallel=}]")
+        logger.info(f"hosseins: ScaledActivation -> weight_loader() [{self.input_is_parallel=}]")
         param_data = param.data
         if self.input_is_parallel:
             tp_rank = get_tensor_model_parallel_rank()
