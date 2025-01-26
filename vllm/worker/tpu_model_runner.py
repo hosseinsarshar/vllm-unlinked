@@ -103,7 +103,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         vllm_config: VllmConfig,
         is_driver_worker: bool = False,
     ):
-        logger.info("hosseins: TPUModelRunner -> __init__()")
+        # logger.info(f"hosseins: TPUModelRunner -> __init__()")
         ModelRunnerBase.__init__(self, vllm_config=vllm_config)
         self.is_driver_worker = is_driver_worker
 
@@ -135,7 +135,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 (block_table_size / smem_size))
 
     def load_model(self) -> None:
-        logger.info("hosseins: TPUModelRunner -> load_model()")
+        # logger.info(f"hosseins: TPUModelRunner -> load_model()")
 
         self.device = self.device_config.device
 
@@ -158,12 +158,12 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         xm.wait_device_ops()
         model = ModelWrapper(model)
 
-        # hosseins start: removed torch.compile
-        self.model = model
-        # self.model = torch.compile(model,
-        #                            backend="openxla",
-        #                            fullgraph=True,
-        #                            dynamic=False)
+        # hosseins start: removed torch.compile - DONE
+        # self.model = model
+        self.model = torch.compile(model,
+                                   backend="openxla",
+                                   fullgraph=True,
+                                   dynamic=False)
         # hosseins end
 
 
@@ -284,10 +284,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
     ) -> None:
         # Prefill
         logger.info("Compiling the model with different input shapes...")
-        tpu_activities = get_tpu_info(0)
-        cpu_mem_util = get_cpu_memory_util()
-        logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{tpu_activities=}]")
-        logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{cpu_mem_util=}]")
+        # tpu_activities = get_tpu_info(0)
+        # cpu_mem_util = get_cpu_memory_util()
+        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{tpu_activities=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{cpu_mem_util=}]")
 
         start = time.time()
         for batch_size in [1]:
@@ -304,10 +304,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                     break
                 seq_len = seq_len * 2
 
-        tpu_activities = get_tpu_info(0)
-        cpu_mem_util = get_cpu_memory_util()
-        logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{cpu_mem_util=}]")
-        logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{tpu_activities=}]")
+        # tpu_activities = get_tpu_info(0)
+        # cpu_mem_util = get_cpu_memory_util()
+        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{cpu_mem_util=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{tpu_activities=}]")
 
         end = time.time()
         logger.info("Compilation for prefill done in %.2f s.", end - start)
@@ -335,11 +335,11 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             end = time.time()
             logger.info("Compilation for prefix prefill done in %.2f s.",
                         end - start)
-        tpu_activities = get_tpu_info(0)
-        cpu_mem_util = get_cpu_memory_util()
+        # tpu_activities = get_tpu_info(0)
+        # cpu_mem_util = get_cpu_memory_util()
 
-        logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{cpu_mem_util=}]")
-        logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{tpu_activities=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{cpu_mem_util=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{tpu_activities=}]")
 
         # Decode
         start = time.time()
@@ -350,10 +350,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                             seq_len,
                             kv_caches,
                             exec_mode=ExecutionMode.DECODE)
-            tpu_activities = get_tpu_info(0)
-            cpu_mem_util = get_cpu_memory_util()
-            logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{tpu_activities=}]")
-            logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{cpu_mem_util=}]")
+            # tpu_activities = get_tpu_info(0)
+            # cpu_mem_util = get_cpu_memory_util()
+            # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{tpu_activities=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{cpu_mem_util=}]")
 
             xm.wait_device_ops()
             logger.info("batch_size: %d, seq_len: %d", batch_size, seq_len)
@@ -617,7 +617,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         intermediate_tensors: Optional[IntermediateTensors] = None,
         num_steps: int = 1,
     ) -> List[SamplerOutput]:
-        logger.info("hosseins: TPUModelRunner -> execute_model()")
+        # logger.info(f"hosseins: TPUModelRunner -> execute_model()")
         assert intermediate_tensors is None
         if not model_input.is_first_multi_step:
             if not model_input.is_last_step:
@@ -651,8 +651,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 return sampler_outputs
 
         is_prompt = model_input.attn_metadata.num_prefills > 0
-        logger.info(f"hosseins: TPUModelRunner -> execute_model() [{is_prompt=}]")
-        logger.info(f"hosseins: TPUModelRunner -> execute_model() [{model_input.attn_metadata.num_prefills=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{is_prompt=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{model_input.attn_metadata.num_prefills=}]")
 
         if is_prompt:
             assert num_steps == 1

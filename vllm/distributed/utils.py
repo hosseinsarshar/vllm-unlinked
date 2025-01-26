@@ -11,6 +11,8 @@ from typing import Any, Deque, Dict, Optional, Sequence, Tuple
 import torch
 from torch.distributed import TCPStore
 
+import torch.nn as nn
+
 import vllm.envs as envs
 from vllm.logger import init_logger
 import torch_xla.distributed.spmd as xs
@@ -277,11 +279,13 @@ def get_row_parallel_partition_spec():
     # return (None, 'axis')
     return ('axis', None)
 
-def shard_spmd(data, mesh, partition_spec, show_visual=True):
+def shard_spmd(data, mesh, partition_spec, show_visual=False):
+    assert isinstance(data, torch.Tensor), "Object is not an torch.Tensor"
     xs.mark_sharding(data, mesh, partition_spec)
     xm.mark_step()
-    sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
-    logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
+    logger.info(f"hosseins: shard_spmd() -> [{type(data)=}]")
+    # sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
+    # logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
 
     if show_visual:
         logger.info("hosseins: after sharding param")

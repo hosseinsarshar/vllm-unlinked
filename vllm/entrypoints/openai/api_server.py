@@ -141,11 +141,11 @@ async def build_async_engine_client_from_engine_args(
 
     Returns the Client or None if the creation failed.
     """
-    logger.info(f"hosseins: api_server.py build_async_engine_client_from_engine_args() {engine_args=}")
+    # logger.info(f"hosseins: api_server.py build_async_engine_client_from_engine_args() {engine_args=}")
     # AsyncLLMEngine.
     if (MQLLMEngineClient.is_unsupported_config(engine_args)
             or envs.VLLM_USE_V1 or disable_frontend_multiprocessing):
-        logger.info(f"hosseins: build_async_engine_client_from_engine_args() -> if (MQLLMEngineClient.is_unsupported_config .. ")
+        # logger.info(f"hosseins: build_async_engine_client_from_engine_args() -> if (MQLLMEngineClient.is_unsupported_config .. ")
         engine_client: Optional[EngineClient] = None
         try:
             engine_client = AsyncLLMEngine.from_engine_args(
@@ -158,7 +158,7 @@ async def build_async_engine_client_from_engine_args(
 
     # MQLLMEngine.
     else:
-        logger.info(f"hosseins: build_async_engine_client_from_engine_args() -> else if PROMETHEUS_MULTIPROC_DIR not in")
+        # logger.info(f"hosseins: build_async_engine_client_from_engine_args() -> else if PROMETHEUS_MULTIPROC_DIR not in")
         if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
             # Make TemporaryDirectory for prometheus multiprocessing
             # Note: global TemporaryDirectory will be automatically
@@ -168,7 +168,7 @@ async def build_async_engine_client_from_engine_args(
             os.environ[
                 "PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir.name
         else:
-            logger.info(f"hosseins: build_async_engine_client_from_engine_args() -> else")
+            # logger.info(f"hosseins: build_async_engine_client_from_engine_args() -> else")
             logger.warning(
                 "Found PROMETHEUS_MULTIPROC_DIR was set by user. "
                 "This directory must be wiped between vLLM runs or "
@@ -393,9 +393,9 @@ async def create_chat_completion(request: ChatCompletionRequest,
 @router.post("/v1/completions")
 @with_cancellation
 async def create_completion(request: CompletionRequest, raw_request: Request):
-    logger.info("hosseins: create_completion")
+    # logger.info(f"hosseins: create_completion")
     handler = completion(raw_request)
-    logger.info(f"hosseins: {handler=}")
+    # logger.info(f"hosseins: {handler=}")
     if handler is None:
         return base(raw_request).create_error_response(
             message="The model does not support Completions API")
@@ -674,7 +674,7 @@ def init_app_state(
     state: State,
     args: Namespace,
 ) -> None:
-    logger.info("hosseins: init_app_state")
+    # # logger.info(f"hosseins: init_app_state")
     if args.served_model_name is not None:
         served_model_names = args.served_model_name
     else:

@@ -607,7 +607,7 @@ def row_parallel_weight_loader(param: torch.Tensor,
 
     mesh = get_mesh()
 
-    shard_spmd(param, mesh, get_col_parallel_partition_spec())
+    shard_spmd(param.data, mesh, get_col_parallel_partition_spec())
 
 
     return ret_o

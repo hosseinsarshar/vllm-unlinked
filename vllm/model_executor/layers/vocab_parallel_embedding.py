@@ -142,8 +142,8 @@ class VocabParallelEmbeddingShardIndices:
         assert self.num_added_elements <= self.num_added_elements_padded
 
 
-# hosseins: removed torch.compile
-# @torch.compile(dynamic=True)
+# hosseins: removed torch.compile - DONE
+@torch.compile(dynamic=True)
 def get_masked_input_and_mask(
         input_: torch.Tensor, org_vocab_start_index: int,
         org_vocab_end_index: int, num_org_vocab_padding: int,
@@ -414,9 +414,9 @@ class VocabParallelEmbedding(torch.nn.Module):
             param[:loaded_weight.shape[0]].data.copy_(loaded_weight)
             param[loaded_weight.shape[0]:].data.fill_(0)
 
-        self.mesh = get_mesh()
+        # self.mesh = get_mesh()
         
-        shard_spmd(param, self.mesh, get_row_parallel_partition_spec())
+        # shard_spmd(param.data, self.mesh, get_row_parallel_partition_spec())
 
 
     def forward(self, input_):

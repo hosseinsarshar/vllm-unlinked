@@ -151,8 +151,8 @@ class UnquantizedLinearMethod(LinearMethodBase):
               layer: torch.nn.Module,
               x: torch.Tensor,
               bias: Optional[torch.Tensor] = None) -> torch.Tensor:
-        tpu_activities = get_tpu_info(0)
-        cpu_mem_util = get_cpu_memory_util()
+        # tpu_activities = get_tpu_info(0)
+        # cpu_mem_util = get_cpu_memory_util()
         # logger.info(f"hosseins: UnquantizedLinearMethod -> apply() [{tpu_activities=}]")
 
         return F.linear(x, layer.weight, bias)
@@ -613,7 +613,8 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
 
             param_data = param_data.narrow(output_dim, shard_offset,
                                             shard_size)
-            shard_spmd(param_data, self.mesh, get_col_parallel_partition_spec())
+            param_data = param_data.to(param.device)
+            shard_spmd(param_data.data, self.mesh, get_col_parallel_partition_spec())
 
             start_idx = tp_rank * shard_size
             # bitsandbytes loads the weights of the specific portion
@@ -655,7 +656,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
+        shard_spmd(param.data, self.mesh, get_col_parallel_partition_spec())
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
                                            loaded_weight: torch.Tensor):
@@ -1105,7 +1106,7 @@ class QKVParallelLinear(ColumnParallelLinear):
         logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        shard_spmd(param, self.mesh, get_col_parallel_partition_spec())
+        shard_spmd(param.data, self.mesh, get_col_parallel_partition_spec())
 
 
 class RowParallelLinear(LinearBase):
@@ -1244,7 +1245,7 @@ class RowParallelLinear(LinearBase):
         logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param_data.shape=}]")
         logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
-        shard_spmd(param, self.mesh, get_row_parallel_partition_spec())
+        shard_spmd(param.data, self.mesh, get_row_parallel_partition_spec())
 
 
     def weight_loader_v2(self, param: BasevLLMParameter,

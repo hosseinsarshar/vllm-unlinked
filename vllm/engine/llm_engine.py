@@ -285,10 +285,10 @@ class LLMEngine:
         if self.model_config.runner_type != "pooling":
             self._initialize_kv_caches()
 
-        tpu_activities = get_tpu_info(0)
-        cpu_mem_util = get_cpu_memory_util()
-        logger.info(f"hosseins: LLMEngine -> __init__() 2 [{tpu_activities=}]")
-        logger.info(f"hosseins: LLMEngine -> __init__() 2 [{cpu_mem_util=}]")
+        # tpu_activities = get_tpu_info(0)
+        # cpu_mem_util = get_cpu_memory_util()
+        # logger.info(f"hosseins: LLMEngine -> __init__() 2 [{tpu_activities=}]")
+        # logger.info(f"hosseins: LLMEngine -> __init__() 2 [{cpu_mem_util=}]")
 
         # If usage stat is enabled, collect relevant info.
         if is_usage_stats_enabled():
