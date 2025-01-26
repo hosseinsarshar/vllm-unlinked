@@ -527,7 +527,7 @@ class LlamaModel(nn.Module):
                 processed_params.add(name)
                 
                 logger.info(f"hosseins: LlamaModel -> load_weights() - param_name, weight_name, shard_id in stacked_params_mapping [{param.data.device=}]")
-                shard_spmd(param.data, self.mesh, get_col_parallel_partition_spec())
+                # shard_spmd(param.data, self.mesh, get_col_parallel_partition_spec())
 
                 # visualize_tensor_sharding(param, use_color=False)
                 

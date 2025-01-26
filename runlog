@@ -1,0 +1,99 @@
+[worker 1] + sudo groupadd docker
+[worker 1] groupadd: group 'docker' already exists
+[worker 1] + sudo usermod -aG docker hosseins
+[worker 1] + newgrp - docker
+[worker 1] Adding credentials for: us-central1-docker.pkg.dev
+[worker 1] Docker configuration file updated.
+[worker 1] Error response from daemon: cannot kill container: hosseins-test: No such container: hosseins-test
+[worker 1] nightly_3.10_tpuvm: Pulling from tpu-pytorch-releases/docker/xla
+[worker 1] 8b5da1b1f756: Pulling fs layer
+[worker 1] 6df16681c019: Pulling fs layer
+[worker 1] 20d363a1dd2d: Pulling fs layer
+[worker 1] e7ff86202e7c: Pulling fs layer
+[worker 1] 12db582d8c2d: Pulling fs layer
+[worker 1] 5abe2a0aded9: Pulling fs layer
+[worker 1] e7ff86202e7c: Waiting
+[worker 1] 12db582d8c2d: Waiting
+[worker 1] e4ac8e44db0b: Pulling fs layer
+[worker 1] 5abe2a0aded9: Waiting
+[worker 1] 887ef38fe884: Pulling fs layer
+[worker 1] a878486e1b9b: Pulling fs layer
+[worker 1] e4ac8e44db0b: Waiting
+[worker 1] 09811244da80: Pulling fs layer
+[worker 1] 3ae23656ef17: Pulling fs layer
+[worker 1] 887ef38fe884: Waiting
+[worker 1] e6964a9355ef: Pulling fs layer
+[worker 1] a878486e1b9b: Waiting
+[worker 1] 09e3ec723bb6: Pulling fs layer
+[worker 1] 09811244da80: Waiting
+[worker 1] c2cab844d56a: Pulling fs layer
+[worker 1] e6964a9355ef: Waiting
+[worker 1] 3ae23656ef17: Waiting
+[worker 1] 081cc3a94761: Pulling fs layer
+[worker 1] 09e3ec723bb6: Waiting
+[worker 1] 019d6ff4ff3c: Pulling fs layer
+[worker 1] c2cab844d56a: Waiting
+[worker 1] 59b67eba0a9a: Pulling fs layer
+[worker 1] 081cc3a94761: Waiting
+[worker 1] 65f8f2053d44: Pulling fs layer
+[worker 1] 019d6ff4ff3c: Waiting
+[worker 1] 65f8f2053d44: Waiting
+[worker 1] 59b67eba0a9a: Waiting
+[worker 1] 6df16681c019: Verifying Checksum
+[worker 1] 6df16681c019: Download complete
+[worker 1] 20d363a1dd2d: Verifying Checksum
+[worker 1] 20d363a1dd2d: Download complete
+[worker 1] 8b5da1b1f756: Verifying Checksum
+[worker 1] 8b5da1b1f756: Download complete
+[worker 1] 12db582d8c2d: Verifying Checksum
+[worker 1] 12db582d8c2d: Download complete
+[worker 1] e4ac8e44db0b: Verifying Checksum
+[worker 1] e4ac8e44db0b: Download complete
+[worker 1] 5abe2a0aded9: Verifying Checksum
+[worker 1] 5abe2a0aded9: Download complete
+[worker 1] 887ef38fe884: Download complete
+[worker 1] e7ff86202e7c: Verifying Checksum
+[worker 1] e7ff86202e7c: Download complete
+[worker 1] 8b5da1b1f756: Pull complete
+[worker 1] 3ae23656ef17: Verifying Checksum
+[worker 1] 3ae23656ef17: Download complete
+[worker 1] a878486e1b9b: Verifying Checksum
+[worker 1] a878486e1b9b: Download complete
+[worker 1] 6df16681c019: Pull complete
+[worker 1] 09e3ec723bb6: Download complete
+[worker 1] 09811244da80: Verifying Checksum
+[worker 1] 09811244da80: Download complete
+[worker 1] 081cc3a94761: Verifying Checksum
+[worker 1] 081cc3a94761: Download complete
+[worker 1] c2cab844d56a: Verifying Checksum
+[worker 1] c2cab844d56a: Download complete
+[worker 1] 59b67eba0a9a: Download complete
+[worker 1] 20d363a1dd2d: Pull complete
+[worker 1] e6964a9355ef: Verifying Checksum
+[worker 1] e6964a9355ef: Download complete
+[worker 1] 65f8f2053d44: Download complete
+[worker 1] 019d6ff4ff3c: Verifying Checksum
+[worker 1] 019d6ff4ff3c: Download complete
+[worker 1] e7ff86202e7c: Pull complete
+[worker 1] 12db582d8c2d: Pull complete
+[worker 1] 5abe2a0aded9: Pull complete
+[worker 1] e4ac8e44db0b: Pull complete
+[worker 1] 887ef38fe884: Pull complete
+[worker 1] a878486e1b9b: Pull complete
+[worker 1] 09811244da80: Pull complete
+[worker 1] 3ae23656ef17: Pull complete
+[worker 1] e6964a9355ef: Pull complete
+[worker 1] 09e3ec723bb6: Pull complete
+[worker 1] c2cab844d56a: Pull complete
+[worker 1] 081cc3a94761: Pull complete
+[worker 1] 019d6ff4ff3c: Pull complete
+[worker 1] 59b67eba0a9a: Pull complete
+[worker 1] 65f8f2053d44: Pull complete
+[worker 1] Digest: sha256:c8b3b91f39bf3fc57b44d5cd90bda45fa5f8df132051fdaab224577e8e70558b
+[worker 1] Status: Downloaded newer image for us-central1-docker.pkg.dev/tpu-pytorch-releases/docker/xla:nightly_3.10_tpuvm
+[worker 1] us-central1-docker.pkg.dev/tpu-pytorch-releases/docker/xla:nightly_3.10_tpuvm
+[worker 1] WARNING:root:libtpu.so and TPU device found. Setting PJRT_DEVICE=TPU.
+[worker 1] torch_xla.devices()=[device(type='xla', index=0), device(type='xla', index=1), device(type='xla', index=2), device(type='xla', index=3), device(type='xla', index=4), device(type='xla', index=5), device(type='xla', index=6), device(type='xla', index=7)]
+[worker 1] torch.__version__='2.7.0'
+[worker 1] torchvision.__version__='0.19.0a0+d23a6e1'
+[worker 1] torch_xla.__version__='2.7.0+git79e4e72'
