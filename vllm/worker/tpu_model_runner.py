@@ -174,8 +174,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         kv_caches: List[Tuple[torch.Tensor, torch.Tensor]],
         exec_mode: ExecutionMode,
     ) -> None:
+        logger.info(f"hosseins: _dummy_run() [{batch_size=}] [{seq_len=}]")
         exec_mode = ExecutionMode(exec_mode)
         if exec_mode.is_prefill():
+            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill()")
             seq_len = (seq_len + 15) // 16 * 16
             token_ids = torch.zeros((batch_size, seq_len),
                                     dtype=torch.int32,
@@ -189,6 +191,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             input_lens = torch.ones((batch_size, ),
                                     dtype=torch.int32,
                                     device=self.device)
+            
+            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
+            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{slot_mapping.shape=}]")
+
             if exec_mode == ExecutionMode.PREFILL:
                 attn_metadata = self.attn_backend.make_metadata(
                     num_prefills=batch_size,
@@ -259,22 +265,57 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         # be re-compiled for every different shapes. This overhead is inevitable
         # in the first run, but can be skipped afterwards as we cache the XLA
         # graphs in the disk (VLLM_XLA_CACHE_PATH).
+
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{exec_mode.is_prefill()=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(token_ids)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(position_ids)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(input_lens)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(kv_caches)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(num_samples)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.slot_mapping)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.context_lens)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.block_tables)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(t)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(p)=}]")
+
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{batch_size=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{seq_len=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{token_ids=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{token_ids.shape=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids.shape=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
+
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{kv_caches=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{len(kv_caches)=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{num_samples=}]")
+        
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping=}]")
+        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
+
+
         if exec_mode.is_prefill():
+            # pass
             # Prefll
-            torch._dynamo.mark_dynamic(token_ids, 1)
-            torch._dynamo.mark_dynamic(position_ids, 1)
+            # torch._dynamo.mark_dynamic(token_ids, 1)
+            # torch._dynamo.mark_dynamic(position_ids, 1)
             torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 1)
-        else:
-            # Decode
-            torch._dynamo.mark_dynamic(token_ids, 0)
-            torch._dynamo.mark_dynamic(position_ids, 0)
-            torch._dynamo.mark_dynamic(input_lens, 0)
-            torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 0)
-            torch._dynamo.mark_dynamic(attn_metadata.context_lens, 0)
-            torch._dynamo.mark_dynamic(attn_metadata.block_tables, 0)
-            torch._dynamo.mark_dynamic(t, 0)
-            torch._dynamo.mark_dynamic(p, 0)
+        # else:
+        #     # Decode
+        #     torch._dynamo.mark_dynamic(token_ids, 0)
+        #     torch._dynamo.mark_dynamic(position_ids, 0)
+        #     torch._dynamo.mark_dynamic(input_lens, 0)
+        #     torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 0)
+        #     torch._dynamo.mark_dynamic(attn_metadata.context_lens, 0)
+        #     torch._dynamo.mark_dynamic(attn_metadata.block_tables, 0)
+        #     torch._dynamo.mark_dynamic(t, 0)
+        #     torch._dynamo.mark_dynamic(p, 0)
         # Dummy run.
+
+        logger.info(f"hosseins: _dummy_run() self.model()")
+        
         self.model(token_ids, position_ids, attn_metadata, input_lens, t, p,
                    num_samples, kv_caches)
 

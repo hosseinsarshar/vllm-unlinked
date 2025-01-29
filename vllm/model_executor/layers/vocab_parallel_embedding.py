@@ -151,6 +151,10 @@ def get_masked_input_and_mask(
         added_vocab_end_index: int) -> Tuple[torch.Tensor, torch.Tensor]:
     # torch.compile will fuse all of the pointwise ops below
     # into a single kernel, making it very fast
+    logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] before")
+    logger.info(f"hosseins -> get_masked_input_and_mask() [{org_vocab_start_index=}] [{org_vocab_end_index=}]")
+    logger.info(f"hosseins -> get_masked_input_and_mask() [{num_org_vocab_padding=}] [{added_vocab_start_index=}] [{added_vocab_end_index=}]")
+
     org_vocab_mask = (input_ >= org_vocab_start_index) & (input_ <
                                                           org_vocab_end_index)
     added_vocab_mask = (input_ >= added_vocab_start_index) & (
@@ -161,6 +165,9 @@ def get_masked_input_and_mask(
                     org_vocab_mask) + (added_offset * added_vocab_mask)
     vocab_mask = org_vocab_mask | added_vocab_mask
     input_ = vocab_mask * (input_ - valid_offset)
+    
+    logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] after")
+    logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] after")
     return input_, ~vocab_mask
 
 

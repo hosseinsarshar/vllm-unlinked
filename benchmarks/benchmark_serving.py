@@ -303,6 +303,9 @@ def sample_hf_requests(
             # Prune too long sequences.
             continue
 
+        if (prompt_len > 256):
+            continue
+
         if "image" in data and isinstance(data["image"], Image):
             image: Image = data["image"]
             image = image.convert("RGB")
