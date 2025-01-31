@@ -288,20 +288,20 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
 
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{kv_caches=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{len(kv_caches)=}]")
+        for i, kv_cache in enumerate(kv_caches):
+            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() {i} - [{[kvc.shape for kvc in kv_cache]}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{num_samples=}]")
-        
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
 
 
-        if exec_mode.is_prefill():
-            # pass
-            # Prefll
-            # torch._dynamo.mark_dynamic(token_ids, 1)
-            # torch._dynamo.mark_dynamic(position_ids, 1)
-            torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 1)
+        # if exec_mode.is_prefill():
+        #     # pass
+        #     # Prefll
+        #     # torch._dynamo.mark_dynamic(token_ids, 1)
+        #     # torch._dynamo.mark_dynamic(position_ids, 1)
+        #     torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 1)
         # else:
         #     # Decode
         #     torch._dynamo.mark_dynamic(token_ids, 0)

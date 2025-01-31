@@ -615,7 +615,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
                                             shard_size)
             param_data = param_data.to(param.device)
             shard_spmd(param_data.data, self.mesh, get_col_parallel_partition_spec())
-            # torch._sync(param)
+            torch._sync(param)
 
             start_idx = tp_rank * shard_size
             # bitsandbytes loads the weights of the specific portion
@@ -658,7 +658,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         logger.info(f"hosseins: MergedColumnParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
         shard_spmd(param.data, self.mesh, get_col_parallel_partition_spec())
-        # torch._sync(param)
+        torch._sync(param)
 
 
     def _load_fused_module_from_checkpoint(self, param: BasevLLMParameter,
@@ -1110,7 +1110,7 @@ class QKVParallelLinear(ColumnParallelLinear):
         logger.info(f"hosseins: QKVParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
         shard_spmd(param.data, self.mesh, get_col_parallel_partition_spec())
-        # torch._sync(param)
+        torch._sync(param)
 
 
 class RowParallelLinear(LinearBase):
@@ -1250,7 +1250,7 @@ class RowParallelLinear(LinearBase):
         logger.info(f"hosseins: RowParallelLinear -> weight_loader() 2 [{param.data.shape=}]")
 
         shard_spmd(param.data, self.mesh, get_row_parallel_partition_spec())
-        # torch._sync(param)
+        torch._sync(param)
 
 
     def weight_loader_v2(self, param: BasevLLMParameter,

@@ -131,7 +131,10 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         m = get_tpu_info(0)
         # logger.info(f"hosseins: TPUWorker -> determine_num_available_blocks() -> get_tpu_info(0) [{m=}]")
         total_memory_size = m["bytes_limit"]
-        profiled = m["peak_bytes_used"] * 2  # Weights + intermediate activations.
+        profiled = m["peak_bytes_used"]  # Weights + intermediate activations.
+
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{profiled / (1024**3)=} GB]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{self.cache_config.gpu_memory_utilization=}]")
 
         # Calculate the TPU KV cache size based on profiling.
         usable_memory_size = int(total_memory_size *
