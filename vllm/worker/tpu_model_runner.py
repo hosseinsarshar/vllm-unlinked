@@ -292,26 +292,27 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         for i, kv_cache in enumerate(kv_caches):
             logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() {i} - [{[kvc.shape for kvc in kv_cache]}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{num_samples=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
 
 
-        # if exec_mode.is_prefill():
-        #     # pass
-        #     # Prefll
-        #     # torch._dynamo.mark_dynamic(token_ids, 1)
-        #     # torch._dynamo.mark_dynamic(position_ids, 1)
-        #     torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 1)
-        # else:
-        #     # Decode
-        #     torch._dynamo.mark_dynamic(token_ids, 0)
-        #     torch._dynamo.mark_dynamic(position_ids, 0)
-        #     torch._dynamo.mark_dynamic(input_lens, 0)
-        #     torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 0)
-        #     torch._dynamo.mark_dynamic(attn_metadata.context_lens, 0)
-        #     torch._dynamo.mark_dynamic(attn_metadata.block_tables, 0)
-        #     torch._dynamo.mark_dynamic(t, 0)
-        #     torch._dynamo.mark_dynamic(p, 0)
+        if exec_mode.is_prefill():
+            # pass
+            # Prefll
+            torch._dynamo.mark_dynamic(token_ids, 1)
+            torch._dynamo.mark_dynamic(position_ids, 1)
+            torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 1)
+        else:
+            # Decode
+            torch._dynamo.mark_dynamic(token_ids, 0)
+            torch._dynamo.mark_dynamic(position_ids, 0)
+            torch._dynamo.mark_dynamic(input_lens, 0)
+            torch._dynamo.mark_dynamic(attn_metadata.slot_mapping, 0)
+            torch._dynamo.mark_dynamic(attn_metadata.context_lens, 0)
+            torch._dynamo.mark_dynamic(attn_metadata.block_tables, 0)
+            torch._dynamo.mark_dynamic(t, 0)
+            torch._dynamo.mark_dynamic(p, 0)
+
+        xm.mark_step()
         # Dummy run.
 
         logger.info(f"hosseins: _dummy_run() self.model()")
