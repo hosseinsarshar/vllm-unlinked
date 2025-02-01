@@ -1,0 +1,32 @@
+nohup vllm serve "meta-llama/Meta-Llama-3.1-8B" --download_dir /dev/shm --num-scheduler-steps 4 --swap-space 16 --disable-log-requests --tensor_parallel_size=1 --max-model-len=2048 --dtype=bfloat16 --gpu-memory-utilization=0.5 > output.log 2>&1 &
+
+======================== Benchmark ========================
+
+python benchmarks/benchmark_serving.py \
+    --backend vllm \
+    --model "meta-llama/Meta-Llama-3.1-8B"  \
+    --dataset-name sharegpt \
+    --dataset-path ~/data/ShareGPT_V3_unfiltered_cleaned_split.json  \
+    --num-prompts 1000
+
+============ Serving Benchmark Result ============
+
+Successful requests:                     657       
+Benchmark duration (s):                  132.75    
+Total input tokens:                      81802     
+Total generated tokens:                  129364    
+Request throughput (req/s):              4.95      
+Output token throughput (tok/s):         974.50    
+Total Token throughput (tok/s):          1590.71   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          36055.18  
+Median TTFT (ms):                        27928.90  
+P99 TTFT (ms):                           89182.34  
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          326.38    
+Median TPOT (ms):                        204.42    
+P99 TPOT (ms):                           2221.34   
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           188.76    
+Median ITL (ms):                         73.69     
+P99 ITL (ms):                            1053.34   

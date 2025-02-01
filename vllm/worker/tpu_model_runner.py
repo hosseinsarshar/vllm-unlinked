@@ -281,11 +281,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
 
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{batch_size=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{seq_len=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{token_ids=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{token_ids.shape=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids.shape=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens=}]")
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
 
         logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{len(kv_caches)=}]")

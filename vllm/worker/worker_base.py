@@ -315,19 +315,19 @@ class LocalOrDistributedWorkerBase(WorkerBase):
     ) -> Optional[List[SamplerOutput]]:
         """Executes at least one model step on the given sequences, unless no
         sequences are provided."""
-        logger.info("hosseins: LocalOrDistributedWorkerBase -> execute_model()")
+        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model()")
         start_time = time.perf_counter()
 
         inputs = self.prepare_input(execute_model_req)
-        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{inputs=}]")
+        # # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{inputs=}]")
 
         if inputs is None:
             return None
 
         model_input, worker_input, kwargs = inputs
         num_steps = worker_input.num_steps
-        logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{self.execute_worker=}]")
-        logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{num_steps=}]")
+        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{self.execute_worker=}]")
+        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{num_steps=}]")
 
         self.execute_worker(worker_input)
 
