@@ -1,0 +1,39 @@
+(vllm-spmd) hosseins@t1v-n-c8688aed-w-0:~/vllm-spmd$ nohup vllm serve "meta-llama/Meta-Llama-3.1-8B" --download_dir /dev/shm --num-scheduler-steps 4 --swap-space 16 --disable-log-requests --tensor_parallel_size=4 --max-model-len=2048 --dtype=bfloat16 --gpu-memory-utilization=0.5 > output.log 2>&1 &
+
+(vllm-bench) hosseins@t1v-n-c8688aed-w-0:~/vllm-bench$ python benchmarks/benchmark_serving.py \
+    --backend vllm \    
+    --model "meta-llama/Meta-Llama-3.1-8B"  \
+    --dataset-name sharegpt \
+    --dataset-path ~/data/ShareGPT_V3_unfiltered_cleaned_split.json  \
+    --num-prompts 1000
+
+INFO 02-01 03:31:17 __init__.py:183] Automatically detected platform tpu.
+Namespace(backend='vllm', base_url=None, host='localhost', port=8000, endpoint='/v1/completions', dataset=None, dataset_name='sharegpt', dataset_path='/home/hosseins/data/ShareGPT_V3_unfiltered_cleaned_split.json', max_concurrency=None, model='meta-llama/Meta-Llama-3.1-8B', tokenizer=None, best_of=1, use_beam_search=False, num_prompts=1000, logprobs=None, request_rate=inf, burstiness=1.0, seed=0, trust_remote_code=False, disable_tqdm=False, profile=False, save_result=False, metadata=None, result_dir=None, result_filename=None, ignore_eos=False, percentile_metrics='ttft,tpot,itl', metric_percentiles='99', goodput=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, random_input_len=1024, random_output_len=128, random_range_ratio=1.0, random_prefix_len=0, hf_subset=None, hf_split=None, hf_output_len=None, tokenizer_mode='auto', served_model_name=None)
+Starting initial single prompt test run...
+Initial test run completed. Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: None
+100%|███████████████████████████████████████████████████████████████████████████████| 1000/1000 [00:32<00:00, 30.86it/s]
+============ Serving Benchmark Result ============
+Successful requests:                     1000      
+Benchmark duration (s):                  32.41     
+Total input tokens:                      215196    
+Total generated tokens:                  127244    
+Request throughput (req/s):              30.86     
+Output token throughput (tok/s):         3926.56   
+Total Token throughput (tok/s):          10567.19  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          9284.72   
+Median TTFT (ms):                        7082.54   
+P99 TTFT (ms):                           22550.27  
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          110.26    
+Median TPOT (ms):                        54.30     
+P99 TPOT (ms):                           1566.06   
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           48.57     
+Median ITL (ms):                         28.90     
+P99 ITL (ms):                            249.81    
+==================================================
+(vllm-bench) hosseins@t1v-n-c8688aed-w-0:~/vllm-bench$ 
