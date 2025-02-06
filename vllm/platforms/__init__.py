@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Optional
 from vllm.plugins import load_plugins_by_group
 from vllm.utils import resolve_obj_by_qualname
 
+# from vllm.distributed.utils import initialize_spmd
+
 from .interface import _Backend  # noqa: F401
 from .interface import CpuArchEnum, Platform, PlatformEnum
 
@@ -21,6 +23,7 @@ def tpu_platform_plugin() -> Optional[str]:
         # has TPUs.
         import libtpu  # noqa: F401
         is_tpu = True
+        # initialize_spmd()
     except Exception:
         pass
 

@@ -47,6 +47,8 @@ if TYPE_CHECKING:
 else:
     QuantizationConfig = None
 
+from vllm.distributed.utils import get_device_ids
+
 logger = init_logger(__name__)
 
 _POOLING_MODEL_MAX_NUM_BATCHED_TOKENS = 32768
@@ -184,6 +186,8 @@ class ModelConfig:
         excluding anything before input ids/embeddings and after
         the final hidden states.
         """
+        logger.info(f'hosseins: ModelConfig() -> compute_hash()')
+
         factors: List[Any] = []
         factors.append(self.model)
         factors.append(self.dtype)
@@ -230,6 +234,7 @@ class ModelConfig:
                  override_pooler_config: Optional["PoolerConfig"] = None,
                  logits_processor_pattern: Optional[str] = None,
                  generation_config: Optional[str] = None) -> None:
+        logger.info(f'hosseins: ModelConfig() -> __init__()')
         self.model = model
         self.tokenizer = tokenizer
         self.tokenizer_mode = tokenizer_mode
@@ -370,6 +375,7 @@ class ModelConfig:
 
     def maybe_pull_model_tokenizer_for_s3(self, model: str,
                                           tokenizer: str) -> None:
+        logger.info(f'hosseins: ModelConfig() -> maybe_pull_model_tokenizer_for_s3()')
         """
         Pull the model config or tokenizer to a temporary
         directory in case of S3.
@@ -395,6 +401,7 @@ class ModelConfig:
     def _init_multimodal_config(
         self, limit_mm_per_prompt: Optional[Mapping[str, int]]
     ) -> Optional["MultiModalConfig"]:
+        logger.info(f'hosseins: ModelConfig() -> _init_multimodal_config()')
         architectures = getattr(self.hf_config, "architectures", [])
         if ModelRegistry.is_multimodal_model(architectures):
             return MultiModalConfig(limit_per_prompt=limit_mm_per_prompt or {})
@@ -406,6 +413,7 @@ class ModelConfig:
         return None
 
     def _get_encoder_config(self):
+        logger.info(f'hosseins: ModelConfig() -> _get_encoder_config()')
         return get_sentence_transformer_tokenizer_config(
             self.model, self.revision)
 
@@ -413,6 +421,7 @@ class ModelConfig:
         self,
         override_pooler_config: Optional["PoolerConfig"],
     ) -> Optional["PoolerConfig"]:
+        logger.info(f'hosseins: ModelConfig() -> _init_pooler_config()')
 
         if self.runner_type == "pooling":
             user_config = override_pooler_config or PoolerConfig()
@@ -482,6 +491,7 @@ class ModelConfig:
         task_option: Union[TaskOption, Literal["draft"]],
         hf_config: PretrainedConfig,
     ) -> Tuple[Set[_ResolvedTask], _ResolvedTask]:
+        logger.info(f'hosseins: ModelConfig() -> _resolve_task()')
         if task_option == "draft":
             return {"draft"}, "draft"
 
@@ -599,6 +609,7 @@ class ModelConfig:
                     "non-quantized models.", self.quantization)
 
     def _verify_cuda_graph(self) -> None:
+        logger.info(f'hosseins: ModelConfig() -> _verify_cuda_graph()')
         if self.max_seq_len_to_capture is None:
             self.max_seq_len_to_capture = self.max_model_len
         self.max_seq_len_to_capture = min(self.max_seq_len_to_capture,
@@ -611,6 +622,7 @@ class ModelConfig:
             self.enforce_eager = True
 
     def _verify_bnb_config(self) -> None:
+        logger.info(f'hosseins: ModelConfig() -> _verify_bnb_config()')
         """
         The current version of bitsandbytes (0.44.0) with 8-bit models does not
         yet support CUDA graph.
@@ -634,6 +646,7 @@ class ModelConfig:
 
     def verify_async_output_proc(self, parallel_config, speculative_config,
                                  device_config) -> None:
+        logger.info(f'hosseins: ModelConfig() -> verify_async_output_proc()')
         if not self.use_async_output_proc:
             # Nothing to check
             return
@@ -676,6 +689,7 @@ class ModelConfig:
         self,
         parallel_config: "ParallelConfig",
     ) -> None:
+        logger.info(f'hosseins: ModelConfig() -> verify_with_parallel_config()')
         total_num_attention_heads = getattr(self.hf_text_config,
                                             "num_attention_heads", 0)
         tensor_parallel_size = parallel_config.tensor_parallel_size
@@ -700,6 +714,7 @@ class ModelConfig:
 
     def get_hf_config_sliding_window(
             self) -> Union[Optional[int], List[Optional[int]]]:
+        logger.info(f'hosseins: ModelConfig() -> get_hf_config_sliding_window()')
         """Get the sliding window size, or None if disabled."""
 
         # Some models, like Qwen2 and Qwen1.5, use `use_sliding_window` in
@@ -711,6 +726,7 @@ class ModelConfig:
         return getattr(self.hf_text_config, "sliding_window", None)
 
     def get_sliding_window(self) -> Optional[Union[int, List[Optional[int]]]]:
+        logger.info(f'hosseins: ModelConfig() -> get_sliding_window()')
         """Get the sliding window size, or None if disabled.
         """
         # If user disables sliding window, return None.
@@ -727,6 +743,7 @@ class ModelConfig:
 
     def get_head_size(self) -> int:
         # TODO remove hard code
+        logger.info(f'hosseins: ModelConfig() -> get_head_size()')
         if hasattr(self.hf_text_config,
                    "model_type") and (self.hf_text_config.model_type
                                       in ('deepseek_v2', 'deepseek_v3')):
@@ -744,6 +761,7 @@ class ModelConfig:
                 self.hf_text_config.num_attention_heads)
 
     def get_total_num_kv_heads(self) -> int:
+        logger.info(f'hosseins: ModelConfig() -> get_total_num_kv_heads()')
         """Returns the total number of KV heads."""
         # For GPTBigCode & Falcon:
         # NOTE: for falcon, when new_decoder_architecture is True, the
@@ -791,7 +809,10 @@ class ModelConfig:
 
     def get_num_kv_heads(self, parallel_config: "ParallelConfig") -> int:
         """Returns the number of KV heads per GPU."""
+        logger.info(f'hosseins: ModelConfig() -> get_num_kv_heads()')
         total_num_kv_heads = self.get_total_num_kv_heads()
+        logger.info(f'hosseins: ModelConfig() -> get_num_kv_heads() [{total_num_kv_heads=}]')
+        logger.info(f'hosseins: ModelConfig() -> get_num_kv_heads() [{parallel_config.tensor_parallel_size=}]')
         # If tensor parallelism is used, we divide the number of KV heads by
         # the tensor parallel size. We will replicate the KV heads in the
         # case where the number of KV heads is smaller than the tensor
@@ -801,20 +822,29 @@ class ModelConfig:
 
     def get_num_attention_heads(self,
                                 parallel_config: "ParallelConfig") -> int:
+        logger.info(f'hosseins: ModelConfig() -> get_num_attention_heads()')
         num_heads = getattr(self.hf_text_config, "num_attention_heads", 0)
-        return num_heads // parallel_config.tensor_parallel_size
+        num_attention_heads = num_heads // parallel_config.tensor_parallel_size
+        logger.info(f'hosseins: ModelConfig() -> get_num_attention_heads() [{num_attention_heads=}]')
+
+        return num_attention_heads
 
     def get_layers_start_end_indices(
             self, parallel_config: "ParallelConfig") -> Tuple[int, int]:
+        logger.info(f'hosseins: ModelConfig() -> get_layers_start_end_indices()')
         from vllm.distributed.utils import get_pp_indices
         total_num_hidden_layers = getattr(self.hf_text_config,
                                           "num_hidden_layers", 0)
         pp_rank = parallel_config.rank // parallel_config.tensor_parallel_size
         pp_size = parallel_config.pipeline_parallel_size
         start, end = get_pp_indices(total_num_hidden_layers, pp_rank, pp_size)
+        logger.info(f'hosseins: ModelConfig() -> get_layers_start_end_indices() [{start=}] [{end=}]')
+
         return start, end
 
     def get_num_layers(self, parallel_config: "ParallelConfig") -> int:
+        logger.info(f'hosseins: ModelConfig() -> get_num_layers()')
+
         start, end = self.get_layers_start_end_indices(parallel_config)
         return end - start
 
@@ -823,6 +853,8 @@ class ModelConfig:
         parallel_config: "ParallelConfig",
         block_type: LayerBlockType = LayerBlockType.attention,
     ) -> int:
+        logger.info(f'hosseins: ModelConfig() -> get_num_layers_by_block_type()')
+        
         # This function relies on 'layers_block_type' in hf_config,
         # for w/o this attribute, we will need to have workarounds like so
         attn_block_type = block_type == LayerBlockType.attention
@@ -851,6 +883,8 @@ class ModelConfig:
                        for t in layers_block_type_value[start:end])
 
     def get_multimodal_config(self) -> "MultiModalConfig":
+        logger.info(f'hosseins: ModelConfig() -> get_multimodal_config()')
+
         """
         Get the multimodal configuration of the model.
 
@@ -863,6 +897,8 @@ class ModelConfig:
         return self.multimodal_config
 
     def try_get_generation_config(self) -> Dict[str, Any]:
+        logger.info(f'hosseins: ModelConfig() -> try_get_generation_config()')
+
         if self.generation_config is None or self.generation_config == "auto":
             config = try_get_generation_config(
                 self.model,
@@ -881,6 +917,8 @@ class ModelConfig:
         return config.to_diff_dict()
 
     def get_diff_sampling_param(self) -> Dict[str, Any]:
+        logger.info(f'hosseins: ModelConfig() -> get_diff_sampling_param()')
+
         """
         This method returns a dictionary containing the parameters
         that differ from the default sampling parameters, but only
@@ -958,6 +996,7 @@ class CacheConfig:
     """
 
     def compute_hash(self) -> str:
+        logger.info(f'hosseins: CacheConfig() -> compute_hash()')
         """
         WARNING: Whenever a new field is added to this config,
         ensure that it is included in the factors list if
@@ -973,6 +1012,8 @@ class CacheConfig:
         factors.append(self.cache_dtype)
         # `cpu_offload_gb` does not use `torch.compile` yet.
         hash_str = hashlib.md5(str(factors).encode()).hexdigest()
+        logger.info(f'hosseins: CacheConfig() -> compute_hash() [{hash_str=}]')
+
         return hash_str
 
     def __init__(
@@ -987,6 +1028,7 @@ class CacheConfig:
         enable_prefix_caching: bool = False,
         cpu_offload_gb: float = 0,
     ) -> None:
+        logger.info(f'hosseins: CacheConfig() -> __init__()')
         self.block_size = block_size
         self.gpu_memory_utilization = gpu_memory_utilization
         self.swap_space_bytes = swap_space * GiB_bytes
@@ -996,6 +1038,16 @@ class CacheConfig:
         self.sliding_window = sliding_window
         self.enable_prefix_caching = enable_prefix_caching
         self.cpu_offload_gb = cpu_offload_gb
+
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.block_size=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.gpu_memory_utilization=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.swap_space_bytes=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.num_gpu_blocks_override=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.cache_dtype=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.is_attention_free=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.sliding_window=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.enable_prefix_caching=}]')
+        logger.info(f'hosseins: CacheConfig() -> __init__() [{self.cpu_offload_gb=}]')
 
         self._verify_args()
         self._verify_cache_dtype()
@@ -1041,11 +1093,17 @@ class CacheConfig:
         self,
         parallel_config: "ParallelConfig",
     ) -> None:
+        logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{parallel_config=}]')
         total_cpu_memory = get_cpu_memory()
         # FIXME(woosuk): Here, it is assumed that the GPUs in a tensor parallel
         # group are in the same node. However, the GPUs may span multiple nodes.
-        num_gpus_per_node = parallel_config.tensor_parallel_size
+        # Hossein: changing this as the number of chips indicates the total size of swap space
+        # assert get_device_ids() > 0, "SPMD is not initialized, yet!"
+        num_gpus_per_node = 8 # len(get_device_ids())  # parallel_config.tensor_parallel_size
         cpu_memory_usage = self.swap_space_bytes * num_gpus_per_node
+        logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{self.swap_space_bytes=}]')
+        logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{cpu_memory_usage=}]')
+        logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{total_cpu_memory=}]')
 
         msg = (f"{cpu_memory_usage / GiB_bytes:.2f} GiB out of the "
                f"{total_cpu_memory / GiB_bytes:.2f} GiB total CPU memory "
@@ -1055,6 +1113,7 @@ class CacheConfig:
         elif cpu_memory_usage > 0.4 * total_cpu_memory:
             logger.warning("Possibly too large swap space. %s", msg)
 
+        logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{msg=}]')
 
 @dataclass
 class TokenizerPoolConfig:
@@ -1412,6 +1471,7 @@ class SchedulerConfig:
     chunked_prefill_enabled: bool = field(init=False)
 
     def compute_hash(self) -> str:
+        logger.info(f'hosseins: SchedulerConfig() -> compute_hash()')
         """
         WARNING: Whenever a new field is added to this config,
         ensure that it is included in the factors list if
@@ -2590,6 +2650,7 @@ class KVTransferConfig(BaseModel):
 
     @property
     def need_kv_parallel_group(self) -> bool:
+        logger.info(f'hosseins: KVTransferConfig() -> need_kv_parallel_group() [{self.kv_parallel_size=}] - [{self.kv_connector}=]')
         # for those database-based connector, vLLM does not need to create
         # parallel group, and in that case the kv parallel size will be 1.
         return self.kv_connector is not None and self.kv_parallel_size > 1

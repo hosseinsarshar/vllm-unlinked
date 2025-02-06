@@ -406,7 +406,6 @@ class OpenAIServingCompletion(OpenAIServing):
                 )
                 # logger.info(f"hosseins - 31 {final_usage_chunk=}")
 
-
                 final_usage_data = (final_usage_chunk.model_dump_json(
                     exclude_unset=False, exclude_none=True))
                 # logger.info(f"hosseins - 32 {final_usage_data=}")

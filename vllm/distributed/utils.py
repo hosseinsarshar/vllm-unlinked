@@ -234,7 +234,7 @@ class StatelessProcessGroup:
 
 
 def initialize_spmd():
-    global mesh, device_ids
+    global _mesh, _device_ids
     import torch_xla.core.xla_model as xm
     import torch_xla.runtime as xr
     import torch_xla.distributed.spmd as xs
@@ -246,31 +246,25 @@ def initialize_spmd():
     num_devices = xr.global_runtime_device_count()
     mesh_shape = (num_devices, )
     logger.info(f"hosseins: mesh_shape: [{mesh_shape=}]")
-    device_ids = np.array(range(num_devices))
-    _mesh = Mesh(device_ids, mesh_shape, ('axis', ))
-    mesh = _mesh
+    _device_ids = np.array(range(num_devices))
+    _mesh = Mesh(_device_ids, mesh_shape, ('axis', ))
     return _mesh
 
 def get_mesh():
     # return None
-    global mesh
-    if mesh is None:
+    global _mesh
+    if _mesh is None:
         logger.info('hosseins: creating mesh')
-        mesh = initialize_spmd()
+        _mesh = initialize_spmd()
     else:
         logger.info('hosseins: returning mesh')
-        return mesh
+        return _mesh
 
-mesh = None
-device_ids = None
+_mesh = None
+_device_ids = None
 
-# def get_col_parallel_partition_spec():
-#     return ('axis', None)
-#     # return ('data', 'model')
-# 
-# def get_row_parallel_partition_spec():
-#     return (None, 'axis')
-#     # return ('model', 'data')
+def get_device_ids():
+    return _device_ids
 
 def get_col_parallel_partition_spec():
     # return ('axis', None)
@@ -290,22 +284,4 @@ def shard_spmd(data, mesh, partition_spec, show_visual=False):
 
     if show_visual:
         logger.info("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(data, use_color=False)
-
-
-def shard_spmd(data, mesh, partition_spec, show_visual=False):
-    assert isinstance(data, torch.Tensor), "Object is not an torch.Tensor"
-    # mesh_shape = (len(device_ids), )
-    # axis_names = "('axis', )" # string version of axis_names
-    # # partition_spec = "('data', 'model')" # string version of partition spec
-    # torch.ops.xla.dynamo_mark_sharding(data, device_ids, mesh_shape, axis_names, partition_spec)
-
-    xs.mark_sharding(data, mesh, partition_spec)
-    xm.mark_step()
-    logger.info(f"hosseins: shard_spmd() -> [{type(data)=}]")
-    # sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
-    # logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
-
-    if show_visual:
-        logger.info("hosseins: after sharding param")
-        generated_table = visualize_tensor_sharding(data, use_color=False)
+        visualize_tensor_sharding(data, use_color=False)

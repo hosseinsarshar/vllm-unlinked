@@ -1,7 +1,6 @@
-nohup vllm serve "meta-llama/Meta-Llama-3.1-8B" --download_dir /dev/shm --num-scheduler-steps 4 --swap-space 16 --disable-log-requests --tensor_parallel_size=1 --max-model-len=2048 --dtype=bfloat16 --gpu-memory-utilization=0.5 > output.log 2>&1 &
+(vllm-bench-spmd) hosseins@t1v-n-c8688aed-w-0:~/vllm-bench-spmd$ nohup vllm serve "meta-llama/Meta-Llama-3.1-8B" --download_dir /dev/shm --num-scheduler-steps 4 --swap-space 16 --disable-log-requests --tensor_parallel_size=1 --max-model-len=2048 --dtype=bfloat16 --gpu-memory-utilization=0.5 > output.log 2>&1 &
 
-
-(vllm-spmd) hosseins@t1v-n-c8688aed-w-0:~/vllm-spmd$ python benchmarks/benchmark_serving.py \
+(vllm-bench-spmd) hosseins@t1v-n-c8688aed-w-0:~/vllm-bench-spmd$ python benchmarks/benchmark_serving.py \
     --backend vllm \
     --model "meta-llama/Meta-Llama-3.1-8B"  \
     --dataset-name sharegpt \
@@ -9,23 +8,23 @@ nohup vllm serve "meta-llama/Meta-Llama-3.1-8B" --download_dir /dev/shm --num-sc
     --num-prompts 1000
     
 ============ Serving Benchmark Result ============
-Successful requests:                     653       
-Benchmark duration (s):                  124.81    
-Total input tokens:                      80550     
-Total generated tokens:                  128753    
-Request throughput (req/s):              5.23      
-Output token throughput (tok/s):         1031.58   
-Total Token throughput (tok/s):          1676.95   
+Successful requests:                     1000      
+Benchmark duration (s):                  121.16    
+Total input tokens:                      215196    
+Total generated tokens:                  127626    
+Request throughput (req/s):              8.25      
+Output token throughput (tok/s):         1053.33   
+Total Token throughput (tok/s):          2829.41   
 ---------------Time to First Token----------------
-Mean TTFT (ms):                          33331.23  
-Median TTFT (ms):                        25106.06  
-P99 TTFT (ms):                           83906.54  
+Mean TTFT (ms):                          33671.98  
+Median TTFT (ms):                        25814.32  
+P99 TTFT (ms):                           82695.58  
 -----Time per Output Token (excl. 1st token)------
-Mean TPOT (ms):                          304.39    
-Median TPOT (ms):                        192.50    
-P99 TPOT (ms):                           2213.90   
+Mean TPOT (ms):                          415.45    
+Median TPOT (ms):                        191.64    
+P99 TPOT (ms):                           6616.59   
 ---------------Inter-token Latency----------------
-Mean ITL (ms):                           178.20    
-Median ITL (ms):                         69.85     
-P99 ITL (ms):                            884.18    
+Mean ITL (ms):                           177.12    
+Median ITL (ms):                         72.96     
+P99 ITL (ms):                            986.80    
 ==================================================

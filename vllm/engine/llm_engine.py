@@ -219,7 +219,7 @@ class LLMEngine:
         mm_registry: MultiModalRegistry = MULTIMODAL_REGISTRY,
         use_cached_outputs: bool = False,
     ) -> None:
-        # logger.info(f"hosseins: LLMEngine -> __init__() {vllm_config=}")
+        logger.info(f"hosseins: LLMEngine -> __init__() {vllm_config=}")
 
         self.vllm_config = vllm_config
         self.model_config = vllm_config.model_config
@@ -235,7 +235,6 @@ class LLMEngine:
         self.prompt_adapter_config = vllm_config.prompt_adapter_config  # noqa
         self.observability_config = vllm_config.observability_config or ObservabilityConfig(  # noqa
         )
-        # mesh = initialize_spmd()
         logger.info(
             "Initializing an LLM engine (v%s) with config: %s, "
             "use_cached_outputs=%s, ",
@@ -421,7 +420,7 @@ class LLMEngine:
         self.seq_id_to_seq_group: Dict[str, SequenceGroupBase] = {}
 
     def _initialize_kv_caches(self) -> None:
-        # logger.info(f"hosseins: LLMEngine -> _initialize_kv_caches()")
+        logger.info(f"hosseins: LLMEngine -> _initialize_kv_caches()")
 
         """Initialize the KV cache in the worker(s).
 

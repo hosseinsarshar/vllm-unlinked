@@ -168,6 +168,7 @@ class LlamaAttention(nn.Module):
         super().__init__()
         layer_idx = extract_layer_index(prefix)
         logger.info(f"hosseins: LlamaAttention -> __init__() : [{layer_idx=}]")
+        logger.info(f"hosseins: LlamaAttention -> __init__() : [{cache_config=}]")
         self.hidden_size = hidden_size
         tp_size = get_tensor_model_parallel_world_size()
         self.total_num_heads = num_heads

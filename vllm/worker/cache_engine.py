@@ -27,10 +27,17 @@ class CacheEngine:
         parallel_config: ParallelConfig,
         device_config: DeviceConfig,
     ) -> None:
+        logger.info(f'hosseins: CacheEngine() -> __init__()')
         self.cache_config = cache_config
         self.model_config = model_config
         self.parallel_config = parallel_config
         self.device_config = device_config
+
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.cache_config=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.model_config=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.parallel_config=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.device_config=}]')
+
 
         self.head_size = model_config.get_head_size()
         # Models like Jamba, have mixed typed layers, E.g Mamba
@@ -40,12 +47,24 @@ class CacheEngine:
 
         self.block_size = cache_config.block_size
         self.num_gpu_blocks = cache_config.num_gpu_blocks
+        
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.head_size=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.num_attention_layers=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.num_kv_heads=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.block_size=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{self.num_gpu_blocks=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() [{cache_config.num_cpu_blocks=}]')
+
         if self.num_gpu_blocks:
             self.num_gpu_blocks //= parallel_config.pipeline_parallel_size
         self.num_cpu_blocks = cache_config.num_cpu_blocks
         if self.num_cpu_blocks:
             self.num_cpu_blocks //= parallel_config.pipeline_parallel_size
 
+        logger.info(f'hosseins: CacheEngine() -> __init__() 2 [{self.num_gpu_blocks=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() 2 [{self.num_cpu_blocks=}]')
+        logger.info(f'hosseins: CacheEngine() -> __init__() 2 [{self.device_config.device_type=}]')
+ 
         if cache_config.cache_dtype == "auto":
             self.dtype = model_config.dtype
         else:
@@ -68,6 +87,9 @@ class CacheEngine:
         num_blocks: int,
         device: str,
     ) -> List[torch.Tensor]:
+        logger.info(f"hosseins: CacheEngine -> _allocate_kv_cache() [{num_blocks=}]")
+        logger.info(f"hosseins: CacheEngine -> _allocate_kv_cache() [{device=}]")
+        
         """Allocates KV cache on the specified device."""
         kv_cache_shape = self.attn_backend.get_kv_cache_shape(
             num_blocks, self.block_size, self.num_kv_heads, self.head_size)

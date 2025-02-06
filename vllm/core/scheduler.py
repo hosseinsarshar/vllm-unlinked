@@ -329,6 +329,9 @@ class Scheduler:
         pipeline_parallel_size: int = 1,
         output_proc_callback: Optional[Callable] = None,
     ) -> None:
+        logger.info(f"hosseins: Scheduler() -> __init__() [{scheduler_config=}]")
+        logger.info(f"hosseins: Scheduler() -> __init__() [{cache_config=}]")
+        logger.info(f"hosseins: Scheduler() -> __init__() [{pipeline_parallel_size=}]")
         self.scheduler_config = scheduler_config
         self.cache_config = cache_config
         # Note for LoRA scheduling: the current policy is extremely

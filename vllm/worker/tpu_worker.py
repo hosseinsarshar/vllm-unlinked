@@ -18,7 +18,7 @@ from vllm.worker.worker_base import (LocalOrDistributedWorkerBase,
                                      LoraNotSupportedWorkerBase, WorkerBase,
                                      WorkerInput)
 
-from vllm.distributed.utils import get_mesh
+from vllm.distributed.utils import initialize_spmd, get_device_ids
 from vllm.utils import get_tpu_info
 
 logger = init_logger(__name__)
@@ -41,7 +41,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self.distributed_init_method = distributed_init_method
         self.is_driver_worker = is_driver_worker
 
-        self.mesh = get_mesh()
+        initialize_spmd()
 
         assert self.device_config.device_type == "tpu"
         if self.cache_config.cache_dtype == "auto":
@@ -130,8 +130,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         # hosseins: xm.get_memory_info is not supported in SPMD changing it to metrics.get_chip_usage
         m = get_tpu_info(0)
         # logger.info(f"hosseins: TPUWorker -> determine_num_available_blocks() -> get_tpu_info(0) [{m=}]")
-        total_memory_size = m["bytes_limit"]
-        profiled = m["peak_bytes_used"]  # Weights + intermediate activations.
+        total_memory_size = m["bytes_limit"] * len(get_device_ids())
+        profiled = m["peak_bytes_used"] * len(get_device_ids())  # Weights + intermediate activations.
 
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{profiled / (1024**3)} GB]")
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{self.cache_config.gpu_memory_utilization=}]")
@@ -150,6 +150,14 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         num_cpu_blocks = int(self.cache_config.swap_space_bytes //
                              block_size_bytes)
         num_cpu_blocks = (num_cpu_blocks // 8) * 8  # Round down to 8.
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{usable_memory_size=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{tpu_kv_cache_bytes=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{dtype_btyes=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{block_size_bytes=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{num_tpu_blocks=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{num_cpu_blocks=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{self.cache_config=}]")
+
         return num_tpu_blocks, num_cpu_blocks
 
     def initialize_cache(
@@ -157,6 +165,12 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         num_gpu_blocks: int,
         num_cpu_blocks: int,
     ) -> None:
+        print(f"hosseins: TPUWorker -> initialize_cache() [{num_gpu_blocks=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{num_cpu_blocks=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{self.cache_config.block_size=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{self.parallel_config=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{self.model_config=}]")
+        
         self.cache_config.num_gpu_blocks = num_gpu_blocks
         self.cache_config.num_cpu_blocks = num_cpu_blocks
         self.block_size = self.cache_config.block_size
@@ -166,12 +180,21 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         num_kv_heads = self.model_config.get_num_kv_heads(self.parallel_config)
         head_size = self.model_config.get_head_size()
 
+        print(f"hosseins: TPUWorker -> initialize_cache() [{dtype=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{num_layers=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{num_kv_heads=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{head_size=}]")
+
         self.cpu_cache: List[Tuple[torch.Tensor, torch.Tensor]] = []
         self.tpu_cache: List[Tuple[torch.Tensor, torch.Tensor]] = []
         tpu_cache_shape = self.model_runner.attn_backend.get_kv_cache_shape(
             num_gpu_blocks, self.block_size, num_kv_heads, head_size)
         cpu_cache_shape = self.model_runner.attn_backend.get_kv_cache_shape(
             num_cpu_blocks, self.block_size, num_kv_heads, head_size)
+        
+        print(f"hosseins: TPUWorker -> initialize_cache() [{tpu_cache_shape=}]")
+        print(f"hosseins: TPUWorker -> initialize_cache() [{cpu_cache_shape=}]")
+
         for _ in range(num_layers):
             tpu_k_cache = torch.zeros(tpu_cache_shape,
                                       dtype=dtype,
