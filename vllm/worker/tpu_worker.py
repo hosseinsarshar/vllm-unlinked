@@ -130,8 +130,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         # hosseins: xm.get_memory_info is not supported in SPMD changing it to metrics.get_chip_usage
         m = get_tpu_info(0)
         # logger.info(f"hosseins: TPUWorker -> determine_num_available_blocks() -> get_tpu_info(0) [{m=}]")
-        total_memory_size = m["bytes_limit"] * len(get_device_ids())
-        profiled = m["peak_bytes_used"] * len(get_device_ids())  # Weights + intermediate activations.
+        total_memory_size = m["bytes_limit"] #  * len(get_device_ids())
+        profiled = m["peak_bytes_used"] # * len(get_device_ids())  # Weights + intermediate activations.
 
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{profiled / (1024**3)} GB]")
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{self.cache_config.gpu_memory_utilization=}]")

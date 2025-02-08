@@ -261,7 +261,7 @@ def get_mesh():
         return _mesh
 
 _mesh = None
-_device_ids = None
+_device_ids = list(range(0, 8))
 
 def get_device_ids():
     return _device_ids

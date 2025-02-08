@@ -1099,8 +1099,8 @@ class CacheConfig:
         # group are in the same node. However, the GPUs may span multiple nodes.
         # Hossein: changing this as the number of chips indicates the total size of swap space
         # assert get_device_ids() > 0, "SPMD is not initialized, yet!"
-        num_gpus_per_node = 8 # len(get_device_ids())  # parallel_config.tensor_parallel_size
-        cpu_memory_usage = self.swap_space_bytes * num_gpus_per_node
+        num_gpus_per_node = parallel_config.tensor_parallel_size # len(get_device_ids())  # parallel_config.tensor_parallel_size
+        cpu_memory_usage = self.swap_space_bytes * parallel_config.tensor_parallel_size # len(get_device_ids())
         logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{self.swap_space_bytes=}]')
         logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{cpu_memory_usage=}]')
         logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{total_cpu_memory=}]')
