@@ -292,6 +292,7 @@ class LocalOrDistributedWorkerBase(WorkerBase):
         execute_model_req: Optional[ExecuteModelRequest] = None
     ) -> Optional[Tuple[BroadcastableModelInput, WorkerInput, Dict[
             str, torch.Tensor]]]:
+        print("hosseins: WorkerBase -> prepare_input")
         """
         Prepare the inputs to ModelRunner and workers.
         """

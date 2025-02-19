@@ -18,8 +18,9 @@ from vllm.worker.worker_base import (LocalOrDistributedWorkerBase,
                                      LoraNotSupportedWorkerBase, WorkerBase,
                                      WorkerInput)
 
-from vllm.distributed.utils import initialize_spmd, get_device_ids
+from vllm.distributed.utils import initialize_spmd, get_device_ids, shard_spmd, get_col_parallel_partition_spec, get_row_parallel_partition_spec
 from vllm.utils import get_tpu_info
+import time
 
 logger = init_logger(__name__)
 
@@ -106,6 +107,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         num_layers = self.model_config.get_num_layers(self.parallel_config)
         head_size = self.model_config.get_head_size()
         num_kv_heads = self.model_config.get_num_kv_heads(self.parallel_config)
+        num_kv_heads_spmd = max(1, num_kv_heads // len(get_device_ids()))
 
         # use an empty tensor instead of `None`` to force Dynamo to pass
         # it by reference, rather by specializing on the value ``None``.
@@ -142,7 +144,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         tpu_kv_cache_bytes = max(usable_memory_size - profiled, 0)
         dtype_btyes = get_dtype_size(self.cache_dtype)
         block_size_bytes = (dtype_btyes * self.cache_config.block_size *
-                            num_layers * 2 * head_size * num_kv_heads)
+                            num_layers * 2 * head_size * num_kv_heads_spmd)
         num_tpu_blocks = tpu_kv_cache_bytes // block_size_bytes
         num_tpu_blocks = (num_tpu_blocks // 8) * 8  # Round down to 8.
 
@@ -151,6 +153,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
                              block_size_bytes)
         num_cpu_blocks = (num_cpu_blocks // 8) * 8  # Round down to 8.
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{usable_memory_size=}]")
+        print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{num_kv_heads_spmd=}]")
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{tpu_kv_cache_bytes=}]")
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{dtype_btyes=}]")
         print(f"hosseins: TPUWorker -> determine_num_available_blocks() [{block_size_bytes=}]")
@@ -199,13 +202,21 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             tpu_k_cache = torch.zeros(tpu_cache_shape,
                                       dtype=dtype,
                                       device=self.device)
+            shard_spmd(data=tpu_k_cache, partition_spec=(get_col_parallel_partition_spec() + (None, None)))
+            
             tpu_v_cache = torch.zeros_like(tpu_k_cache)
+            shard_spmd(data=tpu_v_cache, partition_spec=(get_col_parallel_partition_spec() + (None, None)))
+            
             self.tpu_cache.append((tpu_k_cache, tpu_v_cache))
             cpu_k_cache = torch.zeros(cpu_cache_shape,
                                       dtype=dtype,
                                       device="cpu")
             cpu_v_cache = torch.zeros_like(cpu_k_cache)
             self.cpu_cache.append((cpu_k_cache, cpu_v_cache))
+
+        print("hosseins: TPUWorker -> initialize_cache() -> sleep started")
+        time.sleep(60)
+        print("hosseins: TPUWorker -> initialize_cache() -> sleep ended")
         self._warmup_model()
 
     def _warmup_model(self) -> None:
@@ -222,6 +233,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             self.model_runner.warmup_model(self.tpu_cache)
 
     def get_cache_block_size_bytes(self) -> int:
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes()")
+
         head_size = self.model_config.get_head_size()
         num_heads = self.model_config.get_num_kv_heads(self.parallel_config)
         num_layers = self.model_config.get_num_layers(self.parallel_config)
@@ -230,6 +243,16 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         value_cache_block = key_cache_block
         total = num_layers * (key_cache_block + value_cache_block)
         dtype_size = get_dtype_size(self.cache_dtype)
+
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{head_size=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{num_heads=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{num_layers=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{total=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{dtype_size=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{key_cache_block=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{value_cache_block=}]")
+        print(f"hosseins: TPUWorker -> get_cache_block_size_bytes() [{dtype_size * total=}]")
+
         return dtype_size * total
 
     @property
@@ -246,14 +269,20 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         self,
         execute_model_req: ExecuteModelRequest,
     ) -> WorkerInput:
+        print(f"hosseins: TPUWorker -> prepare_worker_input()")
+        
         virtual_engine = execute_model_req.virtual_engine
         num_seq_groups = len(execute_model_req.seq_group_metadata_list)
-        blocks_to_swap_in = _make_src_to_dst(
-            execute_model_req.blocks_to_swap_in, "cpu", self.device)
-        blocks_to_swap_out = _make_src_to_dst(
-            execute_model_req.blocks_to_swap_out, self.device, "cpu")
-        blocks_to_copy = _make_src_to_dst(execute_model_req.blocks_to_copy,
-                                          self.device, self.device)
+        blocks_to_swap_in = _make_src_to_dst(execute_model_req.blocks_to_swap_in, "cpu", self.device)
+        blocks_to_swap_out = _make_src_to_dst(execute_model_req.blocks_to_swap_out, self.device, "cpu")
+        blocks_to_copy = _make_src_to_dst(execute_model_req.blocks_to_copy, self.device, self.device)
+        
+        print(f"hosseins: TPUWorker -> prepare_worker_input() [{virtual_engine=}]")
+        print(f"hosseins: TPUWorker -> prepare_worker_input() [{num_seq_groups=}]")
+        print(f"hosseins: TPUWorker -> prepare_worker_input() [{blocks_to_swap_in=}]")
+        print(f"hosseins: TPUWorker -> prepare_worker_input() [{blocks_to_swap_out=}]")
+        print(f"hosseins: TPUWorker -> prepare_worker_input() [{blocks_to_copy=}]")
+
         return WorkerInput(
             num_seq_groups=num_seq_groups,
             blocks_to_swap_in=blocks_to_swap_in,
@@ -317,7 +346,7 @@ def _make_src_to_dst(
 
 
 # hosseins: removed torch.compile - DONE
-@torch.compile(backend="openxla")
+# @torch.compile(backend="openxla")
 def _insert_kv(
     k: torch.Tensor,
     v: torch.Tensor,

@@ -18,6 +18,7 @@ class TPUExecutor(ExecutorBase):
     uses_ray: bool = False
 
     def _init_executor(self) -> None:
+
         assert not self.scheduler_config.chunked_prefill_enabled, (
             "Chunked prefill is not yet supported for TPU backend")
         assert not self.speculative_config, (
@@ -32,6 +33,7 @@ class TPUExecutor(ExecutorBase):
         self.driver_worker = self._create_worker()
         self.driver_worker.init_device()
         self.driver_worker.load_model()
+
 
     def _get_worker_kwargs(
         self,
@@ -57,16 +59,24 @@ class TPUExecutor(ExecutorBase):
         rank: int = 0,
         distributed_init_method: Optional[str] = None,
     ):
+        logger.info(f"hosseins: TPUExecutor -> _create_worker() [{local_rank=}]")
+        logger.info(f"hosseins: TPUExecutor -> _create_worker() [{rank=}]")
+        logger.info(f"hosseins: TPUExecutor -> _create_worker() [{distributed_init_method=}]")
+        logger.info(f"hosseins: TPUExecutor -> _create_worker() [{self.scheduler_config.is_multi_step=}]")
         if self.scheduler_config.is_multi_step:
             from vllm.worker.multi_step_tpu_worker import MultiStepTPUWorker
             worker = MultiStepTPUWorker(**self._get_worker_kwargs(
                 local_rank, rank, distributed_init_method))
+            logger.info(f"hosseins: TPUExecutor -> _create_worker() MultiStepTPUWorker? [{type(worker)=}]")
+            
             return worker
         else:
             from vllm.worker.tpu_worker import TPUWorker
 
             worker = TPUWorker(**self._get_worker_kwargs(
                 local_rank, rank, distributed_init_method))
+            logger.info(f"hosseins: TPUExecutor -> _create_worker() TPUWorker? [{type(worker)=}]")
+            
             return worker
 
     def initialize_cache(
@@ -137,6 +147,7 @@ class TPUExecutorAsync(TPUExecutor, ExecutorAsyncBase):
         self,
         sexecute_model_req: ExecuteModelRequest,
     ) -> SamplerOutput:
+        logger.info(f"hosseins: TPUExecutorAsync -> execute_model_async()")
         output = await make_async(self.driver_worker.execute_model
                                   )(sexecute_model_req)
         return output

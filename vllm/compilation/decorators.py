@@ -151,6 +151,8 @@ def _support_torch_compile(
 
         # hosseins start: added line 156 "return" - DONE
 
+        return
+        
         self.do_not_compile = \
             vllm_config.compilation_config.level in [
             CompilationLevel.NO_COMPILATION, CompilationLevel.DYNAMO_AS_IS

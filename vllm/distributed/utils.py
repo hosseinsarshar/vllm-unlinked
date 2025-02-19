@@ -267,21 +267,30 @@ def get_device_ids():
     return _device_ids
 
 def get_col_parallel_partition_spec():
-    # return ('axis', None)
+    return ('axis', None)
     return (None, 'axis')
 
 def get_row_parallel_partition_spec():
-    # return (None, 'axis')
+    return (None, 'axis')
     return ('axis', None)
 
-def shard_spmd(data, mesh, partition_spec, show_visual=False):
+def shard_spmd(data, mesh=None, partition_spec=None, show_visual=False):
     assert isinstance(data, torch.Tensor), "Object is not an torch.Tensor"
+    if mesh is None:
+        mesh = _mesh
+
     xs.mark_sharding(data, mesh, partition_spec)
     xm.mark_step()
     logger.info(f"hosseins: shard_spmd() -> [{type(data)=}]")
-    # sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
-    # logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
+    sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
+    logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
 
     if show_visual:
         logger.info("hosseins: after sharding param")
         visualize_tensor_sharding(data, use_color=False)
+
+def get_shard_spec(tensor):
+    logger.info(f"hosseins: get_shard_spec() -> [{type(tensor)=}]")
+    xm.mark_step()
+    sharding = torch_xla._XLAC._get_xla_sharding_spec(tensor)
+    return sharding

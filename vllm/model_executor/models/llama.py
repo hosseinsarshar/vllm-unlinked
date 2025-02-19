@@ -57,8 +57,7 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, extract_layer_index,
                     maybe_prefix)
 from vllm.logger import init_logger
 
-
-from vllm.utils import get_tpu_info, get_cpu_memory_util
+from vllm.distributed.utils import get_shard_spec
 
 logger = init_logger(__name__)
 
@@ -150,7 +149,6 @@ class LlamaMLP(nn.Module):
 
 
 class LlamaAttention(nn.Module):
-
     def __init__(
         self,
         config: LlamaConfig,
@@ -258,10 +256,31 @@ class LlamaAttention(nn.Module):
     ) -> torch.Tensor:
         # logger.info(f"hossein: LlamaAttention -> forward")
         qkv, _ = self.qkv_proj(hidden_states)
+
+        logger.info(f"hossein: LlamaAttention -> forward [{get_shard_spec(hidden_states)=}]")
+        logger.info(f"hossein: LlamaAttention -> forward [{get_shard_spec(qkv)=}]")
+
+        logger.info(f"hossein: LlamaAttention -> forward [{qkv.shape=}]")
+
+        logger.info(f"hossein: LlamaAttention -> forward [{qkv.shape=}]")
         q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
+        logger.info(f"hossein: LlamaAttention -> forward 1 [{q.shape=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 1 [{k.shape=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 1 [{v.shape=}]")
         q, k = self.rotary_emb(positions, q, k)
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{q.shape=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{k.shape=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{v.shape=}]")
         attn_output = self.attn(q, k, v, kv_cache, attn_metadata)
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{attn_output.shape=}]")
         output, _ = self.o_proj(attn_output)
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{output.shape=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{get_shard_spec(q)=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{get_shard_spec(k)=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{get_shard_spec(v)=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{get_shard_spec(output)=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{get_shard_spec(kv_cache[0])=}]")
+        logger.info(f"hossein: LlamaAttention -> forward 2 [{get_shard_spec(kv_cache[1])=}]")
         return output
 
 
@@ -344,7 +363,7 @@ class LlamaDecoderLayer(nn.Module):
         return hidden_states, residual
 
 # hosseins: removed @support_torch_compile - DONE
-@support_torch_compile
+# @support_torch_compile
 class LlamaModel(nn.Module):
 
     def __init__(self,

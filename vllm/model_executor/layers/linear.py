@@ -26,7 +26,7 @@ from vllm.model_executor.utils import set_weight_attrs
 
 from vllm.utils import get_tpu_info, get_cpu_memory_util
 
-from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd
+from vllm.distributed.utils import get_mesh, get_col_parallel_partition_spec, get_row_parallel_partition_spec, shard_spmd, get_shard_spec
 import torch_xla.distributed.spmd as xs
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 
@@ -416,6 +416,7 @@ class ColumnParallelLinear(LinearBase):
         else:
             output = output_parallel
         output_bias = self.bias if self.skip_bias_add else None
+        logger.info(f"hosseins: ColumnParallelLinear -> forward() [{get_shard_spec(output)=}]")
         return output, output_bias
 
     def extra_repr(self) -> str:

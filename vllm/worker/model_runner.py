@@ -1169,10 +1169,10 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
             CompilationLevel.DYNAMO_AS_IS and supports_dynamo():
             backend = self.vllm_config.compilation_config.init_backend(
                 self.vllm_config)
-            self.model = torch.compile(
-                self.model,
-                fullgraph=envs.VLLM_TEST_DYNAMO_FULLGRAPH_CAPTURE,
-                backend=backend)
+            # self.model = torch.compile(
+            #     self.model,
+            #     fullgraph=envs.VLLM_TEST_DYNAMO_FULLGRAPH_CAPTURE,
+            #     backend=backend)
         # hosseins end
 
     def save_sharded_state(
