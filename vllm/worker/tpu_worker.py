@@ -18,7 +18,7 @@ from vllm.worker.worker_base import (LocalOrDistributedWorkerBase,
                                      LoraNotSupportedWorkerBase, WorkerBase,
                                      WorkerInput)
 
-from vllm.distributed.utils import initialize_spmd, get_device_ids, shard_spmd, get_col_parallel_partition_spec, get_row_parallel_partition_spec
+from vllm.distributed.utils import initialize_spmd, get_device_ids, shard_spmd, get_col_parallel_partition_spec, is_spmd, get_shard_spec
 from vllm.utils import get_tpu_info
 import time
 
@@ -144,7 +144,7 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         tpu_kv_cache_bytes = max(usable_memory_size - profiled, 0)
         dtype_btyes = get_dtype_size(self.cache_dtype)
         block_size_bytes = (dtype_btyes * self.cache_config.block_size *
-                            num_layers * 2 * head_size * num_kv_heads_spmd)
+                            num_layers * 2 * head_size * (num_kv_heads_spmd if is_spmd() else num_kv_heads))
         num_tpu_blocks = tpu_kv_cache_bytes // block_size_bytes
         num_tpu_blocks = (num_tpu_blocks // 8) * 8  # Round down to 8.
 
@@ -292,14 +292,22 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         )
 
     def execute_worker(self, worker_input: WorkerInput) -> None:
+        print(f"hosseins: TPUWorker -> execute_worker()")
+
         virtual_engine = worker_input.virtual_engine
         assert virtual_engine == 0
         attn_backend = self.model_runner.attn_backend
         num_layers = self.model_config.get_num_layers(self.parallel_config)
+        print(f"hosseins: TPUWorker -> execute_worker() [{num_layers=}]")
 
         # Issue cache operations.
+        print(f"hosseins: TPUWorker -> execute_worker() [{worker_input.blocks_to_swap_in is not None=}]")
+
         if worker_input.blocks_to_swap_in is not None:
             src_indices, dst_indices = worker_input.blocks_to_swap_in
+            print(f"hosseins: TPUWorker -> execute_worker() [{src_indices.shape=}]")
+            print(f"hosseins: TPUWorker -> execute_worker() [{dst_indices.shape=}]")
+
             if src_indices.numel() > 0:
                 # Swap from CPU to TPU.
                 for i in range(num_layers):
@@ -356,5 +364,21 @@ def _insert_kv(
 ) -> None:
     torch.ops.xla.dynamo_set_buffer_donor_(tpu_k_cache, True)
     torch.ops.xla.dynamo_set_buffer_donor_(tpu_v_cache, True)
+    print(f"hosseins: _insert_kv() [{k.shape=}]")
+    print(f"hosseins: _insert_kv() [{k.device=}]")
+    print(f"hosseins: _insert_kv() [{get_shard_spec(k)=}]")
+    print(f"hosseins: _insert_kv() [{v.shape=}]")
+    print(f"hosseins: _insert_kv() [{v.device=}]")
+    print(f"hosseins: _insert_kv() [{get_shard_spec(v)=}]")
+    print(f"hosseins: _insert_kv() [{indices.shape=}]")
+    print(f"hosseins: _insert_kv() [{indices.device=}]")
+    print(f"hosseins: _insert_kv() [{get_shard_spec(indices)=}]")
+    print(f"hosseins: _insert_kv() [{tpu_k_cache.shape=}]")
+    print(f"hosseins: _insert_kv() [{tpu_k_cache.device=}]")
+    print(f"hosseins: _insert_kv() [{get_shard_spec(tpu_k_cache)=}]")
+    print(f"hosseins: _insert_kv() [{tpu_v_cache.shape=}]")
+    print(f"hosseins: _insert_kv() [{tpu_v_cache.device=}]")
+    print(f"hosseins: _insert_kv() [{get_shard_spec(tpu_v_cache)=}]")
+
     tpu_k_cache[:, indices] = k
     tpu_v_cache[:, indices] = v

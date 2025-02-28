@@ -24,6 +24,9 @@ from vllm.worker.model_runner_base import (
     _add_attn_metadata_broadcastable_dict,
     _init_attn_metadata_from_tensor_dict)
 
+from vllm.distributed.utils import get_shard_spec, is_spmd, get_device_ids, shard_spmd, get_col_parallel_partition_spec
+from vllm.distributed.parallel_state import get_world_group
+
 from vllm.utils import get_tpu_info, get_cpu_memory_util
 
 if TYPE_CHECKING:
@@ -563,6 +566,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         input_lens = torch.tensor([1] * batch_size,
                                   dtype=torch.int32,
                                   device="cpu")
+        
         attn_metadata = self.attn_backend.make_metadata(
             num_prefills=0,
             num_prefill_tokens=0,
@@ -639,6 +643,11 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         else:
             inputs = self._prepare_decode(seq_group_metadata_list)
         input_tokens, input_positions, attn_metadata, input_lens = inputs
+        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_tokens.shape=}]")
+        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_positions.shape=}]")
+        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{attn_metadata.slot_mapping.shape=}]")
+        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{attn_metadata.slot_mapping.device=}]")
+        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_lens.shape=}]")
         padded_batch_size = input_tokens.shape[0]
         t, p, n = self._prepare_sample(seq_group_metadata_list,
                                        padded_batch_size)
@@ -861,6 +870,35 @@ class ModelWrapper(nn.Module):
             kv_caches: The key and value caches. They can be None during the
                 memory profiling at initialization.
         """
+        k_cache, v_cache = kv_caches[0]
+        
+        print(f"hosseins: ModelWrapper -> forward() 1 [{token_ids.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{token_ids.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(token_ids)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{position_ids.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{position_ids.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(position_ids)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.slot_mapping.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.slot_mapping.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{input_lens.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{input_lens.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(input_lens)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{t.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{t.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(t)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{p.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{p.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(p)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{num_samples=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{k_cache.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{k_cache.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(k_cache)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{v_cache.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{v_cache.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(v_cache)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.num_prefills=}]")
+
         batch_size, seq_len = token_ids.shape
         # Calculate the positions to sample from.
         start_indicies = torch.arange(
@@ -884,6 +922,8 @@ class ModelWrapper(nn.Module):
             # work, we need to flatten the first three dimensions and modify
             # the slot_mapping accordingly.
             num_kv_heads, num_blocks, block_size, _ = kv_caches[0][0].shape
+            # if is_spmd(): num_kv_heads = max(1, num_kv_heads // len(get_device_ids()))
+
             slot_mapping = attn_metadata.slot_mapping
             slot_mapping = slot_mapping.flatten()
             head_indicies = torch.arange(0,
@@ -897,14 +937,52 @@ class ModelWrapper(nn.Module):
             slot_mapping = slot_mapping.flatten()
             attn_metadata.slot_mapping = slot_mapping
 
+
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_world_group().rank=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_world_group().ranks=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_world_group().local_rank=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_world_group().world_size=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_world_group().device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{token_ids.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{token_ids.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_shard_spec(token_ids)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{position_ids.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{position_ids.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_shard_spec(position_ids)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{input_lens.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{input_lens.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{input_lens=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_shard_spec(input_lens)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{attn_metadata.slot_mapping.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{attn_metadata.slot_mapping.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
+        print(f"hosseins: ModelWrapper -> forward() 2 [{attn_metadata.slot_mapping=}]")
+
+
+        shard_spmd(attn_metadata.slot_mapping, partition_spec=(None, 'axis'))
+
+
         hidden_states = self.model(
             token_ids,
             position_ids,
             kv_caches,
             attn_metadata,
         )
+        print(f"hosseins: ModelWrapper -> forward() 3 [{hidden_states.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 3 [{hidden_states.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 3 [{get_shard_spec(hidden_states)=}]")
+
         hidden_states = hidden_states.flatten(0, 1)
+
+        print(f"hosseins: ModelWrapper -> forward() 4 [{hidden_states.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 4 [{hidden_states.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 4 [{get_shard_spec(hidden_states)=}]")
+
         logits = self.model.compute_logits(hidden_states, sampling_metadata)
+
+        print(f"hosseins: ModelWrapper -> forward() 5 [{logits.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 5 [{logits.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(logits)=}]")
 
         # Argmax sampling.
         argmax_token_ids = torch.argmax(logits, dim=-1, keepdim=True)
@@ -921,6 +999,11 @@ class ModelWrapper(nn.Module):
         sampled_token_ids = torch.multinomial(probs,
                                               num_samples,
                                               replacement=True)
+        
+        print(f"hosseins: ModelWrapper -> forward() 5 [{sampled_token_ids.shape=}]")
+        print(f"hosseins: ModelWrapper -> forward() 5 [{sampled_token_ids.device=}]")
+        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(sampled_token_ids)=}]")
+
         if num_samples == 1:
             argmax_token_ids = argmax_token_ids.squeeze(dim=-1)
             sampled_token_ids = sampled_token_ids.squeeze(dim=-1)
