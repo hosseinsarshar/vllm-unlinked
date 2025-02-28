@@ -958,7 +958,6 @@ class ModelWrapper(nn.Module):
         print(f"hosseins: ModelWrapper -> forward() 2 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
         print(f"hosseins: ModelWrapper -> forward() 2 [{attn_metadata.slot_mapping=}]")
 
-
         shard_spmd(attn_metadata.slot_mapping, partition_spec=(None, 'axis'))
 
 
