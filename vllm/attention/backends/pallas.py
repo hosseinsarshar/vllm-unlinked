@@ -178,16 +178,16 @@ class PallasAttentionBackendImpl(AttentionImpl):
             shape = [batch_size, seq_len, num_heads * head_size]
         """
         key_cache, value_cache = kv_cache
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{query.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(query)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{key.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(key)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{value.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(value)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{key_cache.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(key_cache)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{value_cache.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(value_cache)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{query.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(query)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{key.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(key)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{value.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(value)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{key_cache.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(key_cache)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{value_cache.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(value_cache)=}]")
 
         num_heads = self.num_heads
         num_kv_heads = self.num_kv_heads
@@ -198,20 +198,20 @@ class PallasAttentionBackendImpl(AttentionImpl):
         key = key.view(batch_size, seq_len, num_kv_heads, self.head_size)
         value = value.view(batch_size, seq_len, num_kv_heads, self.head_size)
 
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{query.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{key.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{value.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{query.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{key.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{value.shape=}]")
         
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(query)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(key)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(value)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(query)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(key)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(value)=}]")
 
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{query.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{key.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{value.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{query.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{key.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{value.shape=}]")
 
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{is_spmd()=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_device_ids()=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{is_spmd()=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_device_ids()=}]")
         
         # if is_spmd():
         #     num_heads = self.num_heads // len(get_device_ids())
@@ -220,12 +220,12 @@ class PallasAttentionBackendImpl(AttentionImpl):
         #     num_heads = self.num_heads
         #     num_kv_heads = self.num_kv_heads
         
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_heads=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_kv_heads=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_heads=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_kv_heads=}]")
 
         if kv_cache[0].numel() > 0:
-            print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.slot_mapping.shape=}]")
-            print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.slot_mapping.device=}]")
+            # print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.slot_mapping.shape=}]")
+            # print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.slot_mapping.device=}]")
             # hosseins: todo: this is the culprit!!!
             # if is_spmd(): slot_mapping = attn_metadata.slot_mapping[:attn_metadata.slot_mapping.shape[0] // len(get_device_ids())]
             slot_mapping = attn_metadata.slot_mapping
@@ -233,11 +233,11 @@ class PallasAttentionBackendImpl(AttentionImpl):
             write_to_kv_cache(key, value, key_cache, value_cache, slot_mapping)
 
         query = query * self.scale
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.num_prefills > 0=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.num_prefills > 0=}]")
         
         if attn_metadata.num_prefills > 0:
-            print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [attn_metadata.num_prefills > 0]")
-            print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.block_tables is None=}]")
+            # print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [attn_metadata.num_prefills > 0]")
+            # print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.block_tables is None=}]")
 
             if attn_metadata.block_tables is None:
                 {}
@@ -337,16 +337,16 @@ class PallasAttentionBackendImpl(AttentionImpl):
                     output[chunk_start:chunk_end] = chunk_output
 
         # Reshape the output tensor.
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 5 [{output.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 5 [{output.shape=}]")
 
         ret_o = output.reshape(batch_size, seq_len, hidden_size)
 
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{key.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{get_shard_spec(key)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{value.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{get_shard_spec(value)=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{ret_o.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{get_shard_spec(ret_o)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{key.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{get_shard_spec(key)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{value.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{get_shard_spec(value)=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{ret_o.shape=}]")
+        # print(f"hosseins: PallasAttentionBackendImpl -> forward() 6 [{get_shard_spec(ret_o)=}]")
 
         return ret_o
 
@@ -378,18 +378,18 @@ def write_to_kv_cache(
         # print("hosseins: 4")
         # print("hosseins: 5")
 
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key_org)=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value_org)=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key_cache_org)=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value_cache_org)=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(slot_mapping)=}]")
-        # print(f"hosseins: write_to_kv_cache() 3 [{key_part_spec=}]")
-        # print(f"hosseins: write_to_kv_cache() 3 [{value_part_spec=}]")
-        # print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping_spec=}]")
-        # print(f"hosseins: write_to_kv_cache() 3 [{key_cache_spec=}]")
-        # print(f"hosseins: write_to_kv_cache() 3 [{value_cache_spec=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key_org)=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value_org)=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key_cache_org)=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value_cache_org)=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(slot_mapping)=}]")
+        # # print(f"hosseins: write_to_kv_cache() 3 [{key_part_spec=}]")
+        # # print(f"hosseins: write_to_kv_cache() 3 [{value_part_spec=}]")
+        # # print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping_spec=}]")
+        # # print(f"hosseins: write_to_kv_cache() 3 [{key_cache_spec=}]")
+        # # print(f"hosseins: write_to_kv_cache() 3 [{value_cache_spec=}]")
 
-        print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
+        # print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
         # query = xs.enable_manual_sharding(query, query_part_spec, mesh=get_mesh()).global_tensor
         key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
         value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
@@ -407,35 +407,35 @@ def write_to_kv_cache(
     torch.ops.xla.dynamo_set_buffer_donor_(value_cache, True)
     
     # print out the sharding the key, value, key_cache, value_cache in eager mode
-    print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(key)=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{key.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(key)=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{key.shape=}]")
     key = key.flatten(0, 2) # why we need flatten in first place - whether the flattening axis is sharded
-    print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(key)=}]")
-    print(f"hosseins: write_to_kv_cache() 2 [{key.shape=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(value)=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{value.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(key)=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{key.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(value)=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{value.shape=}]")
     value = value.flatten(0, 2)
-    print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(value)=}]")
-    print(f"hosseins: write_to_kv_cache() 2 [{value.shape=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(key_cache)=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{key_cache.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(value)=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{value.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(key_cache)=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{key_cache.shape=}]")
     key_cache = key_cache.flatten(0, 2) # hosseins: sharding should align with key_cache
-    print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(key_cache)=}]")
-    print(f"hosseins: write_to_kv_cache() 2 [{key_cache.shape=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(value_cache)=}]")
-    print(f"hosseins: write_to_kv_cache() 1 [{value_cache.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(key_cache)=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{key_cache.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{get_shard_spec(value_cache)=}]")
+    # print(f"hosseins: write_to_kv_cache() 1 [{value_cache.shape=}]")
     value_cache = value_cache.flatten(0, 2)
-    print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(value_cache)=}]")
-    print(f"hosseins: write_to_kv_cache() 2 [{value_cache.shape=}]")
-    print(f"hosseins: write_to_kv_cache() [{slot_mapping.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{get_shard_spec(value_cache)=}]")
+    # print(f"hosseins: write_to_kv_cache() 2 [{value_cache.shape=}]")
+    # print(f"hosseins: write_to_kv_cache() [{slot_mapping.shape=}]")
     key_cache.index_copy_(0, slot_mapping, key)
     value_cache.index_copy_(0, slot_mapping, value)
 
-    print(f"hosseins: write_to_kv_cache() 3 [{key.device=}]")
-    print(f"hosseins: write_to_kv_cache() 3 [{value.device=}]")
-    print(f"hosseins: write_to_kv_cache() 3 [{key_cache.device=}]")
-    print(f"hosseins: write_to_kv_cache() 3 [{value_cache.device=}]")
-    print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping.device=}]")
+    # print(f"hosseins: write_to_kv_cache() 3 [{key.device=}]")
+    # print(f"hosseins: write_to_kv_cache() 3 [{value.device=}]")
+    # print(f"hosseins: write_to_kv_cache() 3 [{key_cache.device=}]")
+    # print(f"hosseins: write_to_kv_cache() 3 [{value_cache.device=}]")
+    # print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping.device=}]")
 
     # read this: https://github.com/pytorch/xla/issues/8742#issuecomment-2691473071
     # it means that this function failed: Check failed: IsNonDeviceDataIR(input) - this means that you have data and I can't .. - the moment you enable or disable manual sharidng,

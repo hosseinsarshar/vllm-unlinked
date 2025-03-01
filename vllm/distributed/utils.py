@@ -253,7 +253,7 @@ def initialize_spmd():
 
     num_devices = xr.global_runtime_device_count()
     mesh_shape = (num_devices, )
-    logger.info(f"hosseins: mesh_shape: [{mesh_shape=}]")
+    # logger.info(f"hosseins: mesh_shape: [{mesh_shape=}]")
     _device_ids = np.array(range(num_devices))
     _mesh = Mesh(_device_ids, mesh_shape, ('axis', ))
     return _mesh
@@ -293,16 +293,16 @@ def shard_spmd(data, mesh=None, partition_spec=None, show_visual=False):
 
     xs.mark_sharding(data, mesh, partition_spec)
     xm.mark_step()
-    # logger.info(f"hosseins: shard_spmd() -> [{type(data)=}]")
+    # # logger.info(f"hosseins: shard_spmd() -> [{type(data)=}]")
     sharding = torch_xla._XLAC._get_xla_sharding_spec(data)
-    logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
+    # logger.info(f"hosseins: shard_spmd() -> [{sharding=}]")
 
     if show_visual:
-        logger.info("hosseins: after sharding param")
+        # logger.info("hosseins: after sharding param")
         visualize_tensor_sharding(data, use_color=False)
 
 def get_shard_spec(tensor):
-    # logger.info(f"hosseins: get_shard_spec() -> [{type(tensor)=}]")
+    # # logger.info(f"hosseins: get_shard_spec() -> [{type(tensor)=}]")
     xm.mark_step()
     if not is_spmd(): 
         return None
@@ -320,25 +320,25 @@ def get_partition_spec(t):
         return None
     
     shard_spec = get_shard_spec(t)
-    logger.info(f"hosseins: get_partition_spec() -> [{shard_spec=}]")
+    # logger.info(f"hosseins: get_partition_spec() -> [{shard_spec=}]")
     match = re.search(r"\[([^\]]+)\]", shard_spec)
-    # logger.info(f"hosseins: get_partition_spec() -> [{match=}]")
+    # # logger.info(f"hosseins: get_partition_spec() -> [{match=}]")
 
     if not match:
         return None
 
     shard_map = match.group(1)
-    # logger.info(f"hosseins: get_partition_spec() -> [{shard_map=}]")
+    # # logger.info(f"hosseins: get_partition_spec() -> [{shard_map=}]")
 
     shard_map_list = ast.literal_eval(f"[{shard_map}]")
-    # logger.info(f"hosseins: get_partition_spec() -> [{shard_map_list=}]")
+    # # logger.info(f"hosseins: get_partition_spec() -> [{shard_map_list=}]")
     return_val = ()
 
     if len(shard_map_list) == 0:
         return_val = ()
     
     return_val = tuple([None if x == 1 else 'axis' for x in shard_map_list])
-    # logger.info(f"hosseins: get_partition_spec() -> [{return_val=}]")
+    # # logger.info(f"hosseins: get_partition_spec() -> [{return_val=}]")
 
     return return_val
 

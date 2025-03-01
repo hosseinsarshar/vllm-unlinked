@@ -106,7 +106,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         vllm_config: VllmConfig,
         is_driver_worker: bool = False,
     ):
-        # logger.info(f"hosseins: TPUModelRunner -> __init__()")
+        # # logger.info(f"hosseins: TPUModelRunner -> __init__()")
         ModelRunnerBase.__init__(self, vllm_config=vllm_config)
         self.is_driver_worker = is_driver_worker
 
@@ -138,7 +138,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 (block_table_size / smem_size))
 
     def load_model(self) -> None:
-        # logger.info(f"hosseins: TPUModelRunner -> load_model()")
+        # # logger.info(f"hosseins: TPUModelRunner -> load_model()")
 
         self.device = self.device_config.device
 
@@ -177,10 +177,10 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         kv_caches: List[Tuple[torch.Tensor, torch.Tensor]],
         exec_mode: ExecutionMode,
     ) -> None:
-        logger.info(f"hosseins: _dummy_run() [{batch_size=}] [{seq_len=}]")
+        # logger.info(f"hosseins: _dummy_run() [{batch_size=}] [{seq_len=}]")
         exec_mode = ExecutionMode(exec_mode)
         if exec_mode.is_prefill():
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill()")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill()")
             seq_len = (seq_len + 15) // 16 * 16
             token_ids = torch.zeros((batch_size, seq_len),
                                     dtype=torch.int32,
@@ -195,8 +195,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                                     dtype=torch.int32,
                                     device=self.device)
             
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{slot_mapping.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{slot_mapping.shape=}]")
 
             if exec_mode == ExecutionMode.PREFILL:
                 attn_metadata = self.attn_backend.make_metadata(
@@ -258,7 +258,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 context_lens=context_lens,
             )
 
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() 2 [{attn_metadata.slot_mapping.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() 2 [{attn_metadata.slot_mapping.shape=}]")
 
         t = torch.ones((batch_size, ), dtype=torch.float32, device=self.device)
         p = torch.ones((batch_size, ), dtype=torch.float32, device=self.device)
@@ -272,32 +272,32 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         # in the first run, but can be skipped afterwards as we cache the XLA
         # graphs in the disk (VLLM_XLA_CACHE_PATH).
 
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{exec_mode.is_prefill()=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(token_ids)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(position_ids)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(input_lens)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(kv_caches)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(num_samples)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.slot_mapping)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.context_lens)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.block_tables)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(t)=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(p)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{exec_mode.is_prefill()=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(token_ids)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(position_ids)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(input_lens)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(kv_caches)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(num_samples)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.slot_mapping)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.context_lens)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(attn_metadata.block_tables)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(t)=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{type(p)=}]")
 
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{batch_size=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{seq_len=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{token_ids.shape=}]")
-        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids.shape=}]")
-        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{batch_size=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{seq_len=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{token_ids.shape=}]")
+        # # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{position_ids.shape=}]")
+        # # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
 
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{len(kv_caches)=}]")
-        for i, kv_cache in enumerate(kv_caches):
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() {i} - [{[kvc.shape for kvc in kv_cache]}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{num_samples=}]")
-        logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{len(kv_caches)=}]")
+        # for i, kv_cache in enumerate(kv_caches):
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() {i} - [{[kvc.shape for kvc in kv_cache]}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{num_samples=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
 
 
         if exec_mode.is_prefill():
@@ -317,17 +317,17 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             torch._dynamo.mark_dynamic(t, 0)
             torch._dynamo.mark_dynamic(p, 0)
 
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.context_lens.shape=}]")
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.block_tables.shape=}]")
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{t.shape=}]")
-            logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{p.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.context_lens.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.block_tables.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{t.shape=}]")
+            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{p.shape=}]")
 
         xm.mark_step()
         # Dummy run.
 
-        logger.info(f"hosseins: _dummy_run() self.model()")
+        # logger.info(f"hosseins: _dummy_run() self.model()")
         
         self.model(token_ids, position_ids, attn_metadata, input_lens, t, p,
                    num_samples, kv_caches)
@@ -340,8 +340,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         logger.info("Compiling the model with different input shapes...")
         # tpu_activities = get_tpu_info(0)
         # cpu_mem_util = get_cpu_memory_util()
-        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{tpu_activities=}]")
-        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{cpu_mem_util=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{tpu_activities=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 1 [{cpu_mem_util=}]")
 
         start = time.time()
         for batch_size in [1]:
@@ -360,8 +360,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
 
         # tpu_activities = get_tpu_info(0)
         # cpu_mem_util = get_cpu_memory_util()
-        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{cpu_mem_util=}]")
-        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{tpu_activities=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{cpu_mem_util=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 2 [{tpu_activities=}]")
 
         end = time.time()
         logger.info("Compilation for prefill done in %.2f s.", end - start)
@@ -392,8 +392,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         # tpu_activities = get_tpu_info(0)
         # cpu_mem_util = get_cpu_memory_util()
 
-        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{cpu_mem_util=}]")
-        # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{tpu_activities=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{cpu_mem_util=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 3 [{tpu_activities=}]")
 
         # Decode
         start = time.time()
@@ -406,8 +406,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                             exec_mode=ExecutionMode.DECODE)
             # tpu_activities = get_tpu_info(0)
             # cpu_mem_util = get_cpu_memory_util()
-            # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{tpu_activities=}]")
-            # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{cpu_mem_util=}]")
+            # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{tpu_activities=}]")
+            # # logger.info(f"hosseins: TPUModelRunner -> warmup_model() 4 [{cpu_mem_util=}]")
 
             xm.wait_device_ops()
             logger.info("batch_size: %d, seq_len: %d", batch_size, seq_len)
@@ -423,7 +423,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         self,
         seq_group_metadata_list: List[SequenceGroupMetadata],
     ) -> Tuple[torch.Tensor, torch.Tensor, AttentionMetadata, torch.Tensor]:
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() [{seq_group_metadata_list=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() [{seq_group_metadata_list=}]")
         
         assert len(seq_group_metadata_list) > 0
         input_tokens: List[int] = []
@@ -479,8 +479,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             input_tokens += [0] * num_paddings
             input_positions += [0] * num_paddings
             slot_mapping += [_PAD_SLOT_ID] * num_paddings
-            logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{len(slot_mapping)=}]")
-            # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{slot_mapping.device=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{len(slot_mapping)=}]")
+            # # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{slot_mapping.device=}]")
 
         assert len(prompt_lens) > 0
         num_prefills = len(prompt_lens)
@@ -513,8 +513,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             context_lens=context_lens,
             effective_query_lens=prompt_lens,
         )
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 2 [{attn_metadata.slot_mapping.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 2 [{attn_metadata.slot_mapping.device=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 2 [{attn_metadata.slot_mapping.shape=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 2 [{attn_metadata.slot_mapping.device=}]")
 
         return input_tokens, input_positions, attn_metadata, prompt_lens
 
@@ -552,7 +552,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 slot = block_number * self.block_size + block_offset
                 slot_mapping.append([slot])
 
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 1 [{len(slot_mapping)=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 1 [{len(slot_mapping)=}]")
 
         batch_size = _get_padded_batch_size(batch_idx)
         num_paddings = batch_size - batch_idx
@@ -561,7 +561,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         slot_mapping = slot_mapping + [[_PAD_SLOT_ID]] * num_paddings
         context_lens = context_lens + [0] * num_paddings
 
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 2 [{len(slot_mapping)=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 2 [{len(slot_mapping)=}]")
 
         input_tokens = torch.tensor(input_tokens,
                                     dtype=torch.int32,
@@ -591,8 +591,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             block_tables=block_tables,
             context_lens=context_lens,
         )
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 3 [{attn_metadata.slot_mapping.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 3 [{attn_metadata.slot_mapping.device=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 3 [{attn_metadata.slot_mapping.shape=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 3 [{attn_metadata.slot_mapping.device=}]")
         return input_tokens, input_positions, attn_metadata, input_lens
 
     def _prepare_sample(
@@ -600,7 +600,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         seq_group_metadata_list: List[SequenceGroupMetadata],
         padded_batch_size: int,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int]]:
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_sample() 1 [{seq_group_metadata_list[0]=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> _prepare_sample() 1 [{seq_group_metadata_list[0]=}]")
         
         assert len(seq_group_metadata_list) > 0
         t = []
@@ -662,11 +662,11 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         else:
             inputs = self._prepare_decode(seq_group_metadata_list)
         input_tokens, input_positions, attn_metadata, input_lens = inputs
-        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_tokens.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_positions.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{attn_metadata.slot_mapping.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{attn_metadata.slot_mapping.device=}]")
-        logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_lens.shape=}]")
+        # logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_tokens.shape=}]")
+        # logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_positions.shape=}]")
+        # logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{attn_metadata.slot_mapping.shape=}]")
+        # logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{attn_metadata.slot_mapping.device=}]")
+        # logger.info(f"hosseins: TPUModelRunner.prepare_model_input() [{input_lens.shape=}]")
         padded_batch_size = input_tokens.shape[0]
         t, p, n = self._prepare_sample(seq_group_metadata_list,
                                        padded_batch_size)
@@ -693,7 +693,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         intermediate_tensors: Optional[IntermediateTensors] = None,
         num_steps: int = 1,
     ) -> List[SamplerOutput]:
-        logger.info(f"hosseins: TPUModelRunner -> execute_model() [{num_steps=}] - [{model_input=}]")
+        # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{num_steps=}] - [{model_input=}]")
         assert intermediate_tensors is None
         if not model_input.is_first_multi_step:
             if not model_input.is_last_step:
@@ -727,8 +727,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 return sampler_outputs
 
         is_prompt = model_input.attn_metadata.num_prefills > 0
-        # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{is_prompt=}]")
-        # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{model_input.attn_metadata.num_prefills=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{is_prompt=}]")
+        # # logger.info(f"hosseins: TPUModelRunner -> execute_model() [{model_input.attn_metadata.num_prefills=}]")
 
         if is_prompt:
             assert num_steps == 1
@@ -737,8 +737,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             # process them separately. This is a temporary hack that should be
             # optimized by using SplashAttention.
             orig_slot_mapping = model_input.attn_metadata.slot_mapping
-            logger.info(f"hosseins: TPUModelRunner -> execute_model() 1 [{model_input.attn_metadata.slot_mapping.shape=}]")
-            logger.info(f"hosseins: TPUModelRunner -> execute_model() 1 [{model_input.attn_metadata.slot_mapping.device=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> execute_model() 1 [{model_input.attn_metadata.slot_mapping.shape=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> execute_model() 1 [{model_input.attn_metadata.slot_mapping.device=}]")
 
             orig_block_tables = model_input.attn_metadata.block_tables
             orig_context_lens = model_input.attn_metadata.context_lens
@@ -762,8 +762,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 attn_metadata.num_prefills = 1
                 attn_metadata.slot_mapping = orig_slot_mapping[
                     None, start_idx:end_idx].to(self.device)
-                logger.info(f"hosseins: TPUModelRunner -> execute_model() 2 [{model_input.attn_metadata.slot_mapping.shape=}]")
-                logger.info(f"hosseins: TPUModelRunner -> execute_model() 2 [{model_input.attn_metadata.slot_mapping.device=}]")
+                # logger.info(f"hosseins: TPUModelRunner -> execute_model() 2 [{model_input.attn_metadata.slot_mapping.shape=}]")
+                # logger.info(f"hosseins: TPUModelRunner -> execute_model() 2 [{model_input.attn_metadata.slot_mapping.device=}]")
                 if orig_context_lens[i].item() > 0:
                     attn_metadata.context_lens = orig_context_lens[i:i + 1].to(
                         self.device)
@@ -818,8 +818,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             attn_metadata.slot_mapping = attn_metadata.slot_mapping.to(
                 self.device)
             
-            logger.info(f"hosseins: TPUModelRunner -> execute_model() 3 [{attn_metadata.slot_mapping.shape=}]")
-            logger.info(f"hosseins: TPUModelRunner -> execute_model() 3 [{attn_metadata.slot_mapping.device=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> execute_model() 3 [{attn_metadata.slot_mapping.shape=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> execute_model() 3 [{attn_metadata.slot_mapping.device=}]")
 
             attn_metadata.block_tables = attn_metadata.block_tables.to(
                 self.device)
@@ -830,8 +830,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             input_lens = model_input.input_lens.to(self.device)
             for i in range(num_steps):
                 slot_mapping = attn_metadata.slot_mapping
-                logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{num_steps=}] [{slot_mapping.shape=}]")
-                logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{num_steps=}] [{slot_mapping.device=}]")
+                # logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{num_steps=}] [{slot_mapping.shape=}]")
+                # logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{num_steps=}] [{slot_mapping.device=}]")
 
                 output_token_ids = self.model(token_ids, position_ids,
                                               attn_metadata, input_lens, t, p,
@@ -869,8 +869,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             sampler_output = _make_decode_output(next_token_ids,
                                                  model_input.seq_groups)
             
-            logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{attn_metadata.slot_mapping.shape=}]")
-            logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{attn_metadata.slot_mapping.device=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{attn_metadata.slot_mapping.shape=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> execute_model() 4 [{attn_metadata.slot_mapping.device=}]")
 
             return [sampler_output]
 
@@ -906,32 +906,32 @@ class ModelWrapper(nn.Module):
         """
         k_cache, v_cache = kv_caches[0]
         
-        print(f"hosseins: ModelWrapper -> forward() 1 [{token_ids.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{token_ids.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(token_ids)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{position_ids.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{position_ids.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(position_ids)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.slot_mapping.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.slot_mapping.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{input_lens.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{input_lens.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(input_lens)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{t.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{t.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(t)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{p.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{p.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(p)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{num_samples=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{k_cache.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{k_cache.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(k_cache)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{v_cache.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{v_cache.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(v_cache)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.num_prefills=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{token_ids.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{token_ids.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(token_ids)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{position_ids.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{position_ids.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(position_ids)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.slot_mapping.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.slot_mapping.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{input_lens.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{input_lens.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(input_lens)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{t.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{t.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(t)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{p.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{p.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(p)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{num_samples=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{k_cache.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{k_cache.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(k_cache)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{v_cache.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{v_cache.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{get_shard_spec(v_cache)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 1 [{attn_metadata.num_prefills=}]")
 
         batch_size, seq_len = token_ids.shape
         # Calculate the positions to sample from.
@@ -958,7 +958,7 @@ class ModelWrapper(nn.Module):
             num_kv_heads, num_blocks, block_size, _ = kv_caches[0][0].shape
             if is_spmd(): num_kv_heads = max(1, num_kv_heads // len(get_device_ids()))
 
-            print(f"hosseins: ModelWrapper -> forward() 2 [{num_kv_heads=}]")
+            # print(f"hosseins: ModelWrapper -> forward() 2 [{num_kv_heads=}]")
 
             slot_mapping = attn_metadata.slot_mapping
             slot_mapping = slot_mapping.flatten()
@@ -966,43 +966,43 @@ class ModelWrapper(nn.Module):
                                          num_kv_heads,
                                          device=slot_mapping.device,
                                          dtype=slot_mapping.dtype)
-            print(f"hosseins: ModelWrapper -> forward() 2 [{head_indicies.shape=}]")
+            # print(f"hosseins: ModelWrapper -> forward() 2 [{head_indicies.shape=}]")
             
             head_indicies *= block_size * num_blocks
-            print(f"hosseins: ModelWrapper -> forward() 3 [{head_indicies.shape=}]")
+            # print(f"hosseins: ModelWrapper -> forward() 3 [{head_indicies.shape=}]")
 
             slot_mapping = slot_mapping.repeat_interleave(num_kv_heads).view(
                 -1, num_kv_heads)
-            print(f"hosseins: ModelWrapper -> forward() 2 [{slot_mapping.shape=}]")
+            # print(f"hosseins: ModelWrapper -> forward() 2 [{slot_mapping.shape=}]")
             
             slot_mapping = slot_mapping + head_indicies.view(1, -1)
-            print(f"hosseins: ModelWrapper -> forward() 3 [{slot_mapping.shape=}]")
+            # print(f"hosseins: ModelWrapper -> forward() 3 [{slot_mapping.shape=}]")
 
             slot_mapping = slot_mapping.flatten()
-            print(f"hosseins: ModelWrapper -> forward() 4 [{slot_mapping.shape=}]")
+            # print(f"hosseins: ModelWrapper -> forward() 4 [{slot_mapping.shape=}]")
 
             attn_metadata.slot_mapping = slot_mapping
 
 
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().rank=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().ranks=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().local_rank=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().world_size=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{token_ids.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{token_ids.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(token_ids)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{position_ids.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{position_ids.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(position_ids)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{input_lens.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{input_lens.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{input_lens=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(input_lens)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{attn_metadata.slot_mapping.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{attn_metadata.slot_mapping.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{attn_metadata.slot_mapping=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().rank=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().ranks=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().local_rank=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().world_size=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_world_group().device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{token_ids.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{token_ids.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(token_ids)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{position_ids.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{position_ids.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(position_ids)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{input_lens.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{input_lens.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{input_lens=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(input_lens)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{attn_metadata.slot_mapping.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{attn_metadata.slot_mapping.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(attn_metadata.slot_mapping)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{attn_metadata.slot_mapping=}]")
 
         # shard_spmd(attn_metadata.slot_mapping, partition_spec=(None, 'axis'))
 
@@ -1012,21 +1012,21 @@ class ModelWrapper(nn.Module):
             kv_caches,
             attn_metadata,
         )
-        print(f"hosseins: ModelWrapper -> forward() 3 [{hidden_states.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 3 [{hidden_states.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 3 [{get_shard_spec(hidden_states)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 3 [{hidden_states.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 3 [{hidden_states.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 3 [{get_shard_spec(hidden_states)=}]")
 
         hidden_states = hidden_states.flatten(0, 1)
 
-        print(f"hosseins: ModelWrapper -> forward() 4 [{hidden_states.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 4 [{hidden_states.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 4 [{get_shard_spec(hidden_states)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 4 [{hidden_states.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 4 [{hidden_states.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 4 [{get_shard_spec(hidden_states)=}]")
 
         logits = self.model.compute_logits(hidden_states, sampling_metadata)
 
-        print(f"hosseins: ModelWrapper -> forward() 5 [{logits.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{logits.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(logits)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{logits.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{logits.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(logits)=}]")
 
         # Argmax sampling.
         argmax_token_ids = torch.argmax(logits, dim=-1, keepdim=True)
@@ -1044,9 +1044,9 @@ class ModelWrapper(nn.Module):
                                               num_samples,
                                               replacement=True)
         
-        print(f"hosseins: ModelWrapper -> forward() 5 [{sampled_token_ids.shape=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{sampled_token_ids.device=}]")
-        print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(sampled_token_ids)=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{sampled_token_ids.shape=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{sampled_token_ids.device=}]")
+        # print(f"hosseins: ModelWrapper -> forward() 5 [{get_shard_spec(sampled_token_ids)=}]")
 
         if num_samples == 1:
             argmax_token_ids = argmax_token_ids.squeeze(dim=-1)

@@ -259,7 +259,7 @@ class ScaledActivation(nn.Module):
         return self.act(x) / self.scales
 
     def weight_loader(self, param: nn.Parameter, loaded_weight: torch.Tensor):
-        logger.info(f"hosseins: ScaledActivation -> weight_loader() [{self.input_is_parallel=}]")
+        # logger.info(f"hosseins: ScaledActivation -> weight_loader() [{self.input_is_parallel=}]")
         param_data = param.data
         if self.input_is_parallel:
             tp_rank = get_tensor_model_parallel_rank()

@@ -34,7 +34,7 @@ class UnquantizedEmbeddingMethod(QuantizeMethodBase):
                        output_size: int, params_dtype: torch.dtype,
                        **extra_weight_attrs):
         """Create weights for embedding layer."""
-        logger.info(f"hosseins: UnquantizedEmbeddingMethod -> create_weights()")
+        # logger.info(f"hosseins: UnquantizedEmbeddingMethod -> create_weights()")
         weight = Parameter(torch.empty(sum(output_partition_sizes),
                                        input_size_per_partition,
                                        dtype=params_dtype),
@@ -151,9 +151,9 @@ def get_masked_input_and_mask(
         added_vocab_end_index: int) -> Tuple[torch.Tensor, torch.Tensor]:
     # torch.compile will fuse all of the pointwise ops below
     # into a single kernel, making it very fast
-    logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] before")
-    logger.info(f"hosseins -> get_masked_input_and_mask() [{org_vocab_start_index=}] [{org_vocab_end_index=}]")
-    logger.info(f"hosseins -> get_masked_input_and_mask() [{num_org_vocab_padding=}] [{added_vocab_start_index=}] [{added_vocab_end_index=}]")
+    # logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] before")
+    # logger.info(f"hosseins -> get_masked_input_and_mask() [{org_vocab_start_index=}] [{org_vocab_end_index=}]")
+    # logger.info(f"hosseins -> get_masked_input_and_mask() [{num_org_vocab_padding=}] [{added_vocab_start_index=}] [{added_vocab_end_index=}]")
 
     org_vocab_mask = (input_ >= org_vocab_start_index) & (input_ <
                                                           org_vocab_end_index)
@@ -166,8 +166,8 @@ def get_masked_input_and_mask(
     vocab_mask = org_vocab_mask | added_vocab_mask
     input_ = vocab_mask * (input_ - valid_offset)
     
-    logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] after")
-    logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] after")
+    # logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] after")
+    # logger.info(f"hosseins -> get_masked_input_and_mask() [{input_.shape=}] after")
     return input_, ~vocab_mask
 
 
@@ -219,7 +219,7 @@ class VocabParallelEmbedding(torch.nn.Module):
                  quant_config: Optional[QuantizationConfig] = None,
                  prefix: str = ""):
         super().__init__()
-        logger.info(f"hosseins: VocabParallelEmbedding -> __init__()")
+        # logger.info(f"hosseins: VocabParallelEmbedding -> __init__()")
         self.mesh = get_mesh()
         # Keep the input dimensions.
         tp_rank = get_tensor_model_parallel_rank()
@@ -291,7 +291,7 @@ class VocabParallelEmbedding(torch.nn.Module):
         """Get start and end indices for vocab parallel embedding, following the
         layout outlined in the class docstring, based on the given tp_rank and
         tp_size."""
-        logger.info(f"hosseins: VocabParallelEmbedding -> _get_indices()")
+        # logger.info(f"hosseins: VocabParallelEmbedding -> _get_indices()")
         num_added_embeddings_padded = vocab_size_padded - org_vocab_size_padded
         padded_org_vocab_start_index, padded_org_vocab_end_index = (
             vocab_range_from_global_vocab_size(org_vocab_size_padded, tp_rank,
@@ -325,7 +325,7 @@ class VocabParallelEmbedding(torch.nn.Module):
         equal the token_id it corresponds to). The indices returned by this
         method allow us to do that.
         """
-        logger.info(f"hosseins: VocabParallelEmbedding -> get_sharded_to_full_mapping()")
+        # logger.info(f"hosseins: VocabParallelEmbedding -> get_sharded_to_full_mapping()")
         if self.tp_size < 2:
             return None
 
@@ -364,7 +364,7 @@ class VocabParallelEmbedding(torch.nn.Module):
         return ret
 
     def weight_loader(self, param: Parameter, loaded_weight: torch.Tensor):
-        logger.info(f"hosseins: VocabParallelEmbedding -> weight_loader()")
+        # logger.info(f"hosseins: VocabParallelEmbedding -> weight_loader()")
         output_dim = getattr(param, "output_dim", None)
         packed_dim = getattr(param, "packed_dim", None)
 
@@ -484,7 +484,7 @@ class ParallelLMHead(VocabParallelEmbedding):
         super().__init__(num_embeddings, embedding_dim, params_dtype,
                          org_num_embeddings, padding_size, quant_config,
                          prefix)
-        logger.info(f"hosseins: ParallelLMHead -> __init__()")
+        # logger.info(f"hosseins: ParallelLMHead -> __init__()")
         self.quant_config = quant_config
         if bias:
             self.bias = Parameter(
@@ -499,7 +499,7 @@ class ParallelLMHead(VocabParallelEmbedding):
 
     def tie_weights(self, embed_tokens: VocabParallelEmbedding):
         """Tie the weights with word embeddings."""
-        logger.info(f"hosseins: ParallelLMHead -> tie_weights()")
+        # logger.info(f"hosseins: ParallelLMHead -> tie_weights()")
         # GGUF quantized embed_tokens.
         if self.quant_config and self.quant_config.get_name() == "gguf":
             return embed_tokens

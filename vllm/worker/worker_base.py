@@ -263,7 +263,7 @@ class LocalOrDistributedWorkerBase(WorkerBase):
     ) -> Tuple[BroadcastableModelInput, WorkerInput, Dict[str, torch.Tensor]]:
         """ Get the driver input and broadcast it to other workers.  """
         assert self.is_driver_worker
-        print("hosseins: LocalOrDistributedWorkerBase._get_driver_input_and_broadcast()")
+        # print("hosseins: LocalOrDistributedWorkerBase._get_driver_input_and_broadcast()")
 
         worker_input: WorkerInput = self.prepare_worker_input(
             execute_model_req=execute_model_req)
@@ -293,7 +293,7 @@ class LocalOrDistributedWorkerBase(WorkerBase):
         execute_model_req: Optional[ExecuteModelRequest] = None
     ) -> Optional[Tuple[BroadcastableModelInput, WorkerInput, Dict[
             str, torch.Tensor]]]:
-        print("hosseins: WorkerBase -> prepare_input")
+        # print("hosseins: WorkerBase -> prepare_input")
         """
         Prepare the inputs to ModelRunner and workers.
         """
@@ -317,19 +317,19 @@ class LocalOrDistributedWorkerBase(WorkerBase):
     ) -> Optional[List[SamplerOutput]]:
         """Executes at least one model step on the given sequences, unless no
         sequences are provided."""
-        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model()")
+        # # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model()")
         start_time = time.perf_counter()
 
         inputs = self.prepare_input(execute_model_req)
-        # # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{inputs=}]")
+        # # # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{inputs=}]")
 
         if inputs is None:
             return None
 
         model_input, worker_input, kwargs = inputs
         num_steps = worker_input.num_steps
-        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{self.execute_worker=}]")
-        # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{num_steps=}]")
+        # # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{self.execute_worker=}]")
+        # # logger.info(f"hosseins: LocalOrDistributedWorkerBase -> execute_model() [{num_steps=}]")
 
         self.execute_worker(worker_input)
 
