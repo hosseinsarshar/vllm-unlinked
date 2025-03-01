@@ -479,8 +479,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             input_tokens += [0] * num_paddings
             input_positions += [0] * num_paddings
             slot_mapping += [_PAD_SLOT_ID] * num_paddings
-            logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{slot_mapping.shape=}]")
-            logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{slot_mapping.device=}]")
+            logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{len(slot_mapping)=}]")
+            # logger.info(f"hosseins: TPUModelRunner -> _prepare_prompt() 1 [{slot_mapping.device=}]")
 
         assert len(prompt_lens) > 0
         num_prefills = len(prompt_lens)
@@ -552,8 +552,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                 slot = block_number * self.block_size + block_offset
                 slot_mapping.append([slot])
 
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 1 [{attn_metadata.slot_mapping.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 1 [{attn_metadata.slot_mapping.device=}]")
+        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 1 [{len(slot_mapping)=}]")
 
         batch_size = _get_padded_batch_size(batch_idx)
         num_paddings = batch_size - batch_idx
@@ -562,8 +561,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         slot_mapping = slot_mapping + [[_PAD_SLOT_ID]] * num_paddings
         context_lens = context_lens + [0] * num_paddings
 
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 2 [{attn_metadata.slot_mapping.shape=}]")
-        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 2 [{attn_metadata.slot_mapping.device=}]")
+        logger.info(f"hosseins: TPUModelRunner -> _prepare_decode() 2 [{len(slot_mapping)=}]")
 
         input_tokens = torch.tensor(input_tokens,
                                     dtype=torch.int32,
@@ -602,6 +600,8 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         seq_group_metadata_list: List[SequenceGroupMetadata],
         padded_batch_size: int,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int]]:
+        logger.info(f"hosseins: TPUModelRunner -> _prepare_sample() 1 [{seq_group_metadata_list[0]=}]")
+        
         assert len(seq_group_metadata_list) > 0
         t = []
         p = []
