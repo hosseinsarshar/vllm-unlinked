@@ -43,6 +43,8 @@ def _init_attn_metadata_from_tensor_dict(
     Helper method to initialize AttentionMetadata based on an
     AttentionBackend and broadcastable AttentionMetadata fields.
     """
+    print(f"hosseins: _init_attn_metadata_from_tensor_dict() [{tensor_dict=}]")
+
     # Extract the fields used to create AttentionMetadata.
     valid_attn_kwargs = {}
     for field in dataclasses.fields(attn_backend.get_metadata_cls()):

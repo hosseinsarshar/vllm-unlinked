@@ -189,11 +189,8 @@ class PallasAttentionBackendImpl(AttentionImpl):
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{value_cache.shape=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_shard_spec(value_cache)=}]")
 
-        num_heads = self.num_heads # // len(device_ids)
-        num_kv_heads = self.num_kv_heads # // len(device_ids)
-        
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_heads=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_kv_heads=}]")
+        num_heads = self.num_heads
+        num_kv_heads = self.num_kv_heads
 
         assert k_scale == 1.0 and v_scale == 1.0
         batch_size, seq_len, hidden_size = query.shape
@@ -213,9 +210,24 @@ class PallasAttentionBackendImpl(AttentionImpl):
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{key.shape=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{value.shape=}]")
 
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{is_spmd()=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_device_ids()=}]")
+        
+        # if is_spmd():
+        #     num_heads = self.num_heads // len(get_device_ids())
+        #     num_kv_heads = self.num_kv_heads // len(get_device_ids())
+        # else:
+        #     num_heads = self.num_heads
+        #     num_kv_heads = self.num_kv_heads
+        
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_heads=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{num_kv_heads=}]")
+
         if kv_cache[0].numel() > 0:
             print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.slot_mapping.shape=}]")
             print(f"hosseins: PallasAttentionBackendImpl -> forward() 4 [{attn_metadata.slot_mapping.device=}]")
+            # hosseins: todo: this is the culprit!!!
+            # if is_spmd(): slot_mapping = attn_metadata.slot_mapping[:attn_metadata.slot_mapping.shape[0] // len(get_device_ids())]
             slot_mapping = attn_metadata.slot_mapping
 
             write_to_kv_cache(key, value, key_cache, value_cache, slot_mapping)
@@ -340,49 +352,56 @@ class PallasAttentionBackendImpl(AttentionImpl):
 
 
 def write_to_kv_cache(
-    key: torch.Tensor,
-    value: torch.Tensor,
-    key_cache: torch.Tensor,
-    value_cache: torch.Tensor,
+    key_org: torch.Tensor,
+    value_org: torch.Tensor,
+    key_cache_org: torch.Tensor,
+    value_cache_org: torch.Tensor,
     slot_mapping: torch.Tensor,
 ) -> None:
-    
+    # todo: bring this block to the previous function call - 
     if is_spmd():
-        key_part_spec = get_partition_spec(key)
-        value_part_spec = get_partition_spec(value)
-        key_cache_spec = get_partition_spec(key_cache)
-        slot_mapping_spec = get_partition_spec(slot_mapping)
-        print("hosseins: -1")
-        value_cache_spec = get_partition_spec(value_cache)
-        print("hosseins: 0")
-        k_full_shape = key.shape
-        print("hosseins: 1")
-        v_full_shape = value.shape
-        print("hosseins: 2")
-        key_cache_full_shape = key_cache.shape
-        print("hosseins: 3")
-        value_cache_full_shape = value_cache.shape
-        slot_mapping_full_shape = slot_mapping.shape
-        print("hosseins: 4")
+        # key_part_spec = get_partition_spec(key)
+        # value_part_spec = get_partition_spec(value)
+        # key_cache_spec = get_partition_spec(key_cache)
+        # slot_mapping_spec = get_partition_spec(slot_mapping)
+        # print("hosseins: -1")
+        # value_cache_spec = get_partition_spec(value_cache)
+        # print("hosseins: 0")
+        # k_full_shape = key.shape
+        # print("hosseins: 1")
+        # v_full_shape = value.shape
+        # print("hosseins: 2")
+        # key_cache_full_shape = key_cache.shape
+        # print("hosseins: 3")
+        # value_cache_full_shape = value_cache.shape
+        # slot_mapping_full_shape = slot_mapping.shape
+        # print("hosseins: 4")
+        # print("hosseins: 5")
 
-        print("hosseins: 5")
-
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key)=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value)=}]")
+        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key_org)=}]")
+        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value_org)=}]")
+        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(key_cache_org)=}]")
+        print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(value_cache_org)=}]")
         print(f"hosseins: write_to_kv_cache() 3 [{get_shard_spec(slot_mapping)=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{key_part_spec=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{value_part_spec=}]")
-        print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping_spec=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{key_part_spec=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{value_part_spec=}]")
+        # print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping_spec=}]")
         # print(f"hosseins: write_to_kv_cache() 3 [{key_cache_spec=}]")
         # print(f"hosseins: write_to_kv_cache() 3 [{value_cache_spec=}]")
 
         print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
         # query = xs.enable_manual_sharding(query, query_part_spec, mesh=get_mesh()).global_tensor
-        key = xs.enable_manual_sharding(key, key_part_spec, mesh=get_mesh()).global_tensor
-        value = xs.enable_manual_sharding(value, value_part_spec, mesh=get_mesh()).global_tensor
-        key_cache = xs.enable_manual_sharding(key_cache, key_cache_spec, mesh=get_mesh()).global_tensor
-        value_cache = xs.enable_manual_sharding(value_cache, value_cache_spec, mesh=get_mesh()).global_tensor
-        slot_mapping = xs.enable_manual_sharding(slot_mapping, slot_mapping_spec, mesh=get_mesh()).global_tensor
+        key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
+        value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
+        key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
+        value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
+        # slot_mapping = xs.enable_manual_sharding(slot_mapping, slot_mapping_spec, mesh=get_mesh()).global_tensor
+    else:
+        key = key_org
+        value = value_org
+        key_cache = key_cache_org
+        value_cache = value_cache_org
+
 
     torch.ops.xla.dynamo_set_buffer_donor_(key_cache, True)
     torch.ops.xla.dynamo_set_buffer_donor_(value_cache, True)
@@ -418,14 +437,18 @@ def write_to_kv_cache(
     print(f"hosseins: write_to_kv_cache() 3 [{value_cache.device=}]")
     print(f"hosseins: write_to_kv_cache() 3 [{slot_mapping.device=}]")
 
-    if is_spmd():
-        print("hosseins: PallasAttentionBackendImpl -> forward() 4 - calling xs.disable_manual_sharding")
-        key = xs.disable_manual_sharding(key, key_part_spec, k_full_shape, mesh=get_mesh()).global_tensor
-        value = xs.disable_manual_sharding(value, value_part_spec, v_full_shape, mesh=get_mesh()).global_tensor
-        key_cache = xs.disable_manual_sharding(key_cache, key_cache_spec, key_cache_full_shape, mesh=get_mesh()).global_tensor
-        value_cache = xs.disable_manual_sharding(value_cache, value_cache_spec, value_cache_full_shape, mesh=get_mesh()).global_tensor
-        slot_mapping = xs.disable_manual_sharding(slot_mapping, slot_mapping_spec, slot_mapping_full_shape, mesh=get_mesh()).global_tensor
-        # xs.mark_sharding()
+    # read this: https://github.com/pytorch/xla/issues/8742#issuecomment-2691473071
+    # it means that this function failed: Check failed: IsNonDeviceDataIR(input) - this means that you have data and I can't .. - the moment you enable or disable manual sharidng,
+    # we first do marksharding.
+
+    # if is_spmd():
+    #     print("hosseins: PallasAttentionBackendImpl -> forward() 4 - calling xs.disable_manual_sharding")
+    #     key = xs.disable_manual_sharding(key, key_part_spec, k_full_shape, mesh=get_mesh()).global_tensor
+    #     value = xs.disable_manual_sharding(value, value_part_spec, v_full_shape, mesh=get_mesh()).global_tensor
+    #     key_cache = xs.disable_manual_sharding(key_cache, key_cache_spec, key_cache_full_shape, mesh=get_mesh()).global_tensor
+    #     value_cache = xs.disable_manual_sharding(value_cache, value_cache_spec, value_cache_full_shape, mesh=get_mesh()).global_tensor
+    #     # slot_mapping = xs.disable_manual_sharding(slot_mapping, slot_mapping_spec, slot_mapping_full_shape, mesh=get_mesh()).global_tensor
+    #     # xs.mark_sharding()
 
 # [[0 1]] [[2 3]]
 # [[4 5]] [[6 7]]
