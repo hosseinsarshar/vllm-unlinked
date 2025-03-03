@@ -162,11 +162,11 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         model = ModelWrapper(model)
 
         # hosseins start: removed torch.compile - DONE
-        self.model = model
-        # self.model = torch.compile(model,
-        #                            backend="openxla",
-        #                            fullgraph=True,
-        #                            dynamic=False)
+        # self.model = model
+        self.model = torch.compile(model,
+                                   backend="openxla",
+                                   fullgraph=True,
+                                   dynamic=False)
         # hosseins end
 
 

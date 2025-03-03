@@ -303,16 +303,21 @@ def shard_spmd(data, mesh=None, partition_spec=None, show_visual=False):
 
 def get_shard_spec(tensor):
     # # logger.info(f"hosseins: get_shard_spec() -> [{type(tensor)=}]")
-    xm.mark_step()
+    # xm.mark_step()
     if not is_spmd(): 
         return None
     sharding = torch_xla._XLAC._get_xla_sharding_spec(tensor)
     return sharding
 
+@torch.compiler.allow_in_graph
+def _spmd_full_to_shard_shape(*args, **kwargs):
+    return torch_xla._XLAC._spmd_full_to_shard_shape(*args, **kwargs)
+
+
 def enable_man_sharding(t):
     if not is_spmd(): 
         return None
-    t = torch_xla._XLAC._spmd_full_to_shard_shape(xla_sharding.unwrap_sharded_tensor(t))
+    t = _spmd_full_to_shard_shape(xla_sharding.unwrap_sharded_tensor(t))
     return xla_sharding.wrap_as_sharded_tensor(t)
 
 def get_partition_spec(t):

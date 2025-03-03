@@ -354,7 +354,7 @@ def _make_src_to_dst(
 
 
 # hosseins: removed torch.compile - DONE
-# @torch.compile(backend="openxla")
+@torch.compile(backend="openxla")
 def _insert_kv(
     k: torch.Tensor,
     v: torch.Tensor,
