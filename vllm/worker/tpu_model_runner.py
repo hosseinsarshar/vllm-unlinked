@@ -317,12 +317,12 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             torch._dynamo.mark_dynamic(t, 0)
             torch._dynamo.mark_dynamic(p, 0)
 
-            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
-            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
-            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.context_lens.shape=}]")
-            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.block_tables.shape=}]")
-            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{t.shape=}]")
-            # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{p.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{input_lens.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.slot_mapping.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.context_lens.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{attn_metadata.block_tables.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{t.shape=}]")
+        # logger.info(f"hosseins: _dummy_run() exec_mode.is_prefill() [{p.shape=}]")
 
         xm.mark_step()
         # Dummy run.

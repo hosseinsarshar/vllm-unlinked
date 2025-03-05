@@ -309,9 +309,16 @@ def get_shard_spec(tensor):
     sharding = torch_xla._XLAC._get_xla_sharding_spec(tensor)
     return sharding
 
-@torch.compiler.allow_in_graph
-def _spmd_full_to_shard_shape(*args, **kwargs):
-    return torch_xla._XLAC._spmd_full_to_shard_shape(*args, **kwargs)
+from torch.library import impl, custom_op
+
+
+@custom_op("xla::_spmd_full_to_shard_shape", mutates_args=())
+def _spmd_full_to_shard_shape(t: torch.Tensor) -> torch.Tensor:
+    return torch_xla._XLAC._spmd_full_to_shard_shape(t)
+
+@_spmd_full_to_shard_shape.register_fake
+def _(t: torch.Tensor) -> torch.Tensor:
+  return torch.empty_like(t)
 
 
 def enable_man_sharding(t):

@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 else:
     QuantizationConfig = None
 
-from vllm.distributed.utils import get_device_ids
+from vllm.distributed.utils import get_device_ids, is_spmd
 
 logger = init_logger(__name__)
 
@@ -1098,9 +1098,8 @@ class CacheConfig:
         # FIXME(woosuk): Here, it is assumed that the GPUs in a tensor parallel
         # group are in the same node. However, the GPUs may span multiple nodes.
         # Hossein: changing this as the number of chips indicates the total size of swap space
-        # assert get_device_ids() > 0, "SPMD is not initialized, yet!"
-        num_gpus_per_node = parallel_config.tensor_parallel_size # len(get_device_ids())  # parallel_config.tensor_parallel_size
         cpu_memory_usage = self.swap_space_bytes * parallel_config.tensor_parallel_size # len(get_device_ids())
+        if is_spmd(): cpu_memory_usage = self.swap_space_bytes * len(get_device_ids())
         # logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{self.swap_space_bytes=}]')
         # logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{cpu_memory_usage=}]')
         # logger.info(f'hosseins: CacheConfig() -> verify_with_parallel_config() [{total_cpu_memory=}]')
