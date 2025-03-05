@@ -312,7 +312,13 @@ def get_shard_spec(tensor):
 def enable_man_sharding(t):
     if not is_spmd(): 
         return None
+    print(f"hosseins: enable_man_sharding 1 -> {type(t)=}")
+    
+    unwrap_t = xla_sharding.unwrap_sharded_tensor(t)
+    print(f"hosseins: enable_man_sharding 2 -> {type(unwrap_t)=}")
     t = torch_xla._XLAC._spmd_full_to_shard_shape(xla_sharding.unwrap_sharded_tensor(t))
+    print(f"hosseins: enable_man_sharding 3 -> {type(t)=}")
+
     return xla_sharding.wrap_as_sharded_tensor(t)
 
 def get_partition_spec(t):

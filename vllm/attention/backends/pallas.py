@@ -7,7 +7,7 @@ import torch_xla.experimental.custom_kernel  # Required to register custom ops.
 from vllm.attention.backends.abstract import (AttentionBackend, AttentionImpl,
                                               AttentionMetadata, AttentionType)
 from vllm.attention.backends.utils import CommonAttentionState
-from vllm.distributed.utils import get_shard_spec, get_partition_spec, get_mesh, get_device_ids, is_spmd
+from vllm.distributed.utils import get_shard_spec, get_partition_spec, get_mesh, get_device_ids, is_spmd, enable_man_sharding
 import torch_xla
 import torch_xla.distributed.spmd as xs
 import os
@@ -395,12 +395,16 @@ def write_to_kv_cache(
         # print(f"hosseins: write_to_kv_cache() 3 [{value_cache_spec=}]")
 
         print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
-        # query = xs.enable_manual_sharding(query, query_part_spec, mesh=get_mesh()).global_tensor
-        key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
-        value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
-        key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
-        value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
-        # slot_mapping = xs.enable_manual_sharding(slot_mapping, slot_mapping_spec, mesh=get_mesh()).global_tensor
+        # key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
+        # value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
+        # key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
+        # value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
+
+        key = enable_man_sharding(key_org).global_tensor
+        value = enable_man_sharding(value_org).global_tensor
+        key_cache = enable_man_sharding(key_cache_org).global_tensor
+        value_cache = enable_man_sharding(value_cache_org).global_tensor
+        
     else:
         key = key_org
         value = value_org
