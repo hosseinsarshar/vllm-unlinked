@@ -395,16 +395,20 @@ def write_to_kv_cache(
         # print(f"hosseins: write_to_kv_cache() 3 [{value_cache_spec=}]")
 
         print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
-        # key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
-        # value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
-        # key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
-        # value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
+        key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
+        value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
+        key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
+        value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
 
-        key = enable_man_sharding(key_org).global_tensor
-        value = enable_man_sharding(value_org).global_tensor
-        key_cache = enable_man_sharding(key_cache_org).global_tensor
-        value_cache = enable_man_sharding(value_cache_org).global_tensor
-        
+        # key = enable_man_sharding(key_org).global_tensor
+        # value = enable_man_sharding(value_org).global_tensor
+        # key_cache = enable_man_sharding(key_cache_org).global_tensor
+        # value_cache = enable_man_sharding(value_cache_org).global_tensor
+
+        key = key_org
+        value = value_org
+        key_cache = key_cache_org
+        value_cache = value_cache_org
     else:
         key = key_org
         value = value_org
