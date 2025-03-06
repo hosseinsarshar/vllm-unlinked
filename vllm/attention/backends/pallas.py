@@ -213,9 +213,9 @@ class PallasAttentionBackendImpl(AttentionImpl):
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{is_spmd()=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_device_ids()=}]")
 
-        shard_spmd(query, partition_spec=((None, None) + get_row_parallel_partition_spec()))
-        shard_spmd(key, partition_spec=((None, None) + get_row_parallel_partition_spec()))
-        shard_spmd(value, partition_spec=((None, None) + get_row_parallel_partition_spec()))
+        # shard_spmd(query, partition_spec=((None, None) + get_row_parallel_partition_spec()))
+        # shard_spmd(key, partition_spec=((None, None) + get_row_parallel_partition_spec()))
+        # shard_spmd(value, partition_spec=((None, None) + get_row_parallel_partition_spec()))
 
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(query)=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(key)=}]")
