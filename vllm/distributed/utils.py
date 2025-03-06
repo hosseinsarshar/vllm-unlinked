@@ -326,7 +326,7 @@ def get_partition_spec(t):
         return None
     
     shard_spec = get_shard_spec(t)
-    logger.info(f"hosseins: get_partition_spec() -> [{shard_spec=}]")
+    # logger.info(f"hosseins: get_partition_spec() -> [{shard_spec=}]")
     match = re.search(r"\[([^\]]+)\]", shard_spec)
     # logger.info(f"hosseins: get_partition_spec() -> [{match=}]")
 

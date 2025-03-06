@@ -7,7 +7,7 @@ import torch_xla.experimental.custom_kernel  # Required to register custom ops.
 from vllm.attention.backends.abstract import (AttentionBackend, AttentionImpl,
                                               AttentionMetadata, AttentionType)
 from vllm.attention.backends.utils import CommonAttentionState
-from vllm.distributed.utils import get_shard_spec, get_partition_spec, get_mesh, get_device_ids, is_spmd, enable_man_sharding
+from vllm.distributed.utils import get_shard_spec, get_partition_spec, get_mesh, get_device_ids, is_spmd, enable_man_sharding, shard_spmd, get_row_parallel_partition_spec
 import torch_xla
 import torch_xla.distributed.spmd as xs
 import os
@@ -206,12 +206,21 @@ class PallasAttentionBackendImpl(AttentionImpl):
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(key)=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_shard_spec(value)=}]")
 
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{query.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{key.shape=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{value.shape=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{query.shape=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{key.shape=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{value.shape=}]")
 
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{is_spmd()=}]")
-        print(f"hosseins: PallasAttentionBackendImpl -> forward() 1 [{get_device_ids()=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{is_spmd()=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 2 [{get_device_ids()=}]")
+
+        shard_spmd(query, partition_spec=((None, None) + get_row_parallel_partition_spec()))
+        shard_spmd(key, partition_spec=((None, None) + get_row_parallel_partition_spec()))
+        shard_spmd(value, partition_spec=((None, None) + get_row_parallel_partition_spec()))
+
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(query)=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(key)=}]")
+        print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(value)=}]")
+
         
         # if is_spmd():
         #     num_heads = self.num_heads // len(get_device_ids())
@@ -395,10 +404,10 @@ def write_to_kv_cache(
         # print(f"hosseins: write_to_kv_cache() 3 [{value_cache_spec=}]")
 
         print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
-        key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
-        value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
-        key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
-        value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
+        # key = xs.enable_manual_sharding(key_org, get_partition_spec(key_org), mesh=get_mesh()).global_tensor
+        # value = xs.enable_manual_sharding(value_org, get_partition_spec(value_org), mesh=get_mesh()).global_tensor
+        # key_cache = xs.enable_manual_sharding(key_cache_org, get_partition_spec(key_cache_org), mesh=get_mesh()).global_tensor
+        # value_cache = xs.enable_manual_sharding(value_cache_org, get_partition_spec(value_cache_org), mesh=get_mesh()).global_tensor
 
         # key = enable_man_sharding(key_org).global_tensor
         # value = enable_man_sharding(value_org).global_tensor
