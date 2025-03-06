@@ -220,7 +220,6 @@ class PallasAttentionBackendImpl(AttentionImpl):
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(query)=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(key)=}]")
         print(f"hosseins: PallasAttentionBackendImpl -> forward() 3 [{get_shard_spec(value)=}]")
-
         
         # if is_spmd():
         #     num_heads = self.num_heads // len(get_device_ids())
