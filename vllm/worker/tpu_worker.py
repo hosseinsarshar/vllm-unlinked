@@ -18,7 +18,7 @@ from vllm.worker.worker_base import (LocalOrDistributedWorkerBase,
                                      LoraNotSupportedWorkerBase, WorkerBase,
                                      WorkerInput)
 
-from vllm.distributed.utils import initialize_spmd, get_device_ids, shard_spmd, get_col_parallel_partition_spec, is_spmd, get_shard_spec
+from vllm.distributed.utils import initialize_spmd, get_device_ids, shard_spmd, get_col_parallel_partition_spec, is_spmd, get_shard_spec, get_row_parallel_partition_spec
 from vllm.utils import get_tpu_info
 import time
 
@@ -202,10 +202,12 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             tpu_k_cache = torch.zeros(tpu_cache_shape,
                                       dtype=dtype,
                                       device=self.device)
-            shard_spmd(data=tpu_k_cache, partition_spec=(get_col_parallel_partition_spec() + (None, None)))
+            # shard_spmd(data=tpu_k_cache, partition_spec=(get_col_parallel_partition_spec() + (None, None)))
+            shard_spmd(data=tpu_k_cache, partition_spec=((None, None) + get_row_parallel_partition_spec()))
             
             tpu_v_cache = torch.zeros_like(tpu_k_cache)
-            shard_spmd(data=tpu_v_cache, partition_spec=(get_col_parallel_partition_spec() + (None, None)))
+            # shard_spmd(data=tpu_v_cache, partition_spec=(get_col_parallel_partition_spec() + (None, None)))
+            shard_spmd(data=tpu_v_cache, partition_spec=((None, None) + get_row_parallel_partition_spec()))
             
             self.tpu_cache.append((tpu_k_cache, tpu_v_cache))
             cpu_k_cache = torch.zeros(cpu_cache_shape,
