@@ -21,6 +21,8 @@ import torch_xla.distributed.spmd.xla_sharding as xla_sharding
 from torch_xla.distributed.spmd.debugging import visualize_tensor_sharding
 import torch_xla.core.xla_model as xm
 import torch_xla
+from torch_xla.distributed.spmd import XLAShardedTensor, Mesh
+from typing import Tuple, Union
 
 import re
 import ast
@@ -326,6 +328,34 @@ def enable_man_sharding(t):
         return None
     t = _spmd_full_to_shard_shape(xla_sharding.unwrap_sharded_tensor(t))
     return xla_sharding.wrap_as_sharded_tensor(t)
+
+def unwrap_sharded_tensor(
+    t: Union[torch.Tensor, XLAShardedTensor]) -> torch.Tensor:
+  if isinstance(t, XLAShardedTensor):
+    return t.global_tensor
+  return t
+
+def wrap_as_sharded_tensor(
+    t: Union[torch.Tensor, XLAShardedTensor]) -> XLAShardedTensor:
+  if not isinstance(t, XLAShardedTensor):
+    return XLAShardedTensor(t)
+  return t
+
+# @custom_op("xla::_spmd_full_to_shard_shape", mutates_args=())
+def enable_manual_sharding(t: Union[torch.Tensor, XLAShardedTensor],
+                           partition_spec: Tuple[Union[Tuple, int, str, None]],
+                           mesh: Mesh = None) -> XLAShardedTensor:
+  """
+  This API enables manual sharding for the given tensor. Manual sharding disables SPMD sharding proporgation and auto
+  partition for the given tensor and all subsequential tensors that produced by an op that uses the given tensor as
+  input, and therefore allows the user to manually call collectives for the tensor and subsequential tensors. It
+  requires the user to provide the partition spec to shard the tensor before enabling the manual sharding. To be noted,
+  the leaf tensors need to pass to disable_manual_sharding before ending the graph.
+  """
+  mesh = get_global_mesh() if mesh is None else mesh
+  t = xs.mark_sharding(unwrap_sharded_tensor(t), mesh, partition_spec)
+  t = torch_xla._XLAC._spmd_full_to_shard_shape(unwrap_sharded_tensor(t))
+  return wrap_as_sharded_tensor(t)
 
 def get_partition_spec(t):
     if not is_spmd(): 
