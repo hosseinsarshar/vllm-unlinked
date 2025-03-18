@@ -107,7 +107,8 @@ class TPUWorker(LoraNotSupportedWorkerBase, LocalOrDistributedWorkerBase):
         num_layers = self.model_config.get_num_layers(self.parallel_config)
         head_size = self.model_config.get_head_size()
         num_kv_heads = self.model_config.get_num_kv_heads(self.parallel_config)
-        num_kv_heads_spmd = max(1, num_kv_heads // len(get_device_ids()))
+        # num_kv_heads_spmd = max(1, num_kv_heads // len(get_device_ids()))
+        num_kv_heads_spmd = num_kv_heads
 
         # use an empty tensor instead of `None`` to force Dynamo to pass
         # it by reference, rather by specializing on the value ``None``.

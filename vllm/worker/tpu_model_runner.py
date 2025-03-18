@@ -956,7 +956,7 @@ class ModelWrapper(nn.Module):
             # work, we need to flatten the first three dimensions and modify
             # the slot_mapping accordingly.
             num_kv_heads, num_blocks, block_size, _ = kv_caches[0][0].shape
-            if is_spmd(): num_kv_heads = max(1, num_kv_heads // len(get_device_ids()))
+            # if is_spmd(): num_kv_heads = max(1, num_kv_heads // len(get_device_ids()))
 
             # print(f"hosseins: ModelWrapper -> forward() 2 [{num_kv_heads=}]")
 

@@ -391,16 +391,20 @@ def write_to_kv_cache(
 
         # print("hosseins: write_to_kv_cache() 3 - calling xs.enable_manual_sharding")
         # query = xs.enable_manual_sharding(query, query_part_spec, mesh=get_mesh()).global_tensor
-        # key = enable_man_sharding(key_org).global_tensor
-        # value = enable_man_sharding(value_org).global_tensor
-        # key_cache = enable_man_sharding(key_cache_org).global_tensor
-        # value_cache = enable_man_sharding(value_cache_org).global_tensor
-        key = enable_manual_sharding(key_org, partition_spec=(None, None, 'axis', None), mesh=get_mesh()).global_tensor
-        value = enable_manual_sharding(value_org, partition_spec=(None, None, 'axis', None), mesh=get_mesh()).global_tensor
-        key_cache = enable_manual_sharding(key_cache_org, partition_spec=('axis', None, None, None), mesh=get_mesh()).global_tensor
-        value_cache = enable_manual_sharding(value_cache_org, partition_spec=('axis', None, None, None), mesh=get_mesh()).global_tensor
+        key = enable_man_sharding(key_org)
+        value = enable_man_sharding(value_org)
+        key_cache = enable_man_sharding(key_cache_org)
+        value_cache = enable_man_sharding(value_cache_org)
+        # key = enable_manual_sharding(key_org, partition_spec=(None, None, 'axis', None), mesh=get_mesh()).global_tensor
+        # value = enable_manual_sharding(value_org, partition_spec=(None, None, 'axis', None), mesh=get_mesh()).global_tensor
+        # key_cache = enable_manual_sharding(key_cache_org, partition_spec=('axis', None, None, None), mesh=get_mesh()).global_tensor
+        # value_cache = enable_manual_sharding(value_cache_org, partition_spec=('axis', None, None, None), mesh=get_mesh()).global_tensor
 
         # slot_mapping = xs.enable_manual_sharding(slot_mapping, slot_mapping_spec, mesh=get_mesh()).global_tensor
+        key = key_org
+        value = value_org
+        key_cache = key_cache_org
+        value_cache = value_cache_org
     else:
         key = key_org
         value = value_org

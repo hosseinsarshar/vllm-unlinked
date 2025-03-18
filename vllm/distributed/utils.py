@@ -323,17 +323,19 @@ def _(t: torch.Tensor) -> torch.Tensor:
   return torch.empty_like(t)
 
 
-def enable_man_sharding(t):
+def enable_man_sharding(t) -> XLAShardedTensor:
     if not is_spmd(): 
         return None
-    t = _spmd_full_to_shard_shape(xla_sharding.unwrap_sharded_tensor(t))
-    return xla_sharding.wrap_as_sharded_tensor(t)
+    t = _spmd_full_to_shard_shape(unwrap_sharded_tensor(t))
+    return t
+
 
 def unwrap_sharded_tensor(
     t: Union[torch.Tensor, XLAShardedTensor]) -> torch.Tensor:
   if isinstance(t, XLAShardedTensor):
     return t.global_tensor
   return t
+
 
 def wrap_as_sharded_tensor(
     t: Union[torch.Tensor, XLAShardedTensor]) -> XLAShardedTensor:
