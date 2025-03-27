@@ -254,8 +254,21 @@ class LlamaAttention(nn.Module):
         kv_cache: torch.Tensor,
         attn_metadata: AttentionMetadata,
     ) -> torch.Tensor:
-        # logger.info(f"hossein: LlamaAttention -> forward")
+        print(f"hosseins: LlamaAttention.forward()")
+        print(f"hosseins: LlamaAttention.forward() {hidden_states.shape=}")
+        print(f"hosseins: LlamaAttention.forward() {hidden_states.device=}")
+        print(f"hosseins: LlamaAttention.forward() {get_shard_spec(hidden_states)=}")
+        print(f"hosseins: LlamaAttention.forward() {self.qkv_proj=}")
+
+        for name, param in self.qkv_proj.named_parameters():
+            print(f"hosseins: LlamaAttention.forward() Name: {name}, Shape: {param.shape=}")
+            print(f"hosseins: LlamaAttention.forward() {get_shard_spec(param)=}")
+
         qkv, _ = self.qkv_proj(hidden_states)
+
+        print(f"hosseins: LlamaAttention.forward() {qkv.shape=}")
+        print(f"hosseins: LlamaAttention.forward() {qkv.device=}")
+        print(f"hosseins: LlamaAttention.forward() {get_shard_spec(qkv)=}")
 
         logger.info(f"hossein: LlamaAttention -> forward [{get_shard_spec(hidden_states)=}]")
         logger.info(f"hossein: LlamaAttention -> forward [{get_shard_spec(qkv)=}]")
@@ -449,6 +462,13 @@ class LlamaModel(nn.Module):
 
         return self.embed_tokens(input_ids)
 
+    @staticmethod
+    def get_layer_status(layer):
+        print(f"hosseins: LlamaModel.forward() ============= {type(layer)=} =============")
+        for name, param in layer.named_parameters():
+            print(f"hosseins: LlamaModel.forward() Name: {name}, Shape: {param.shape=}")
+            print(f"hosseins: LlamaModel.forward() {get_shard_spec(param)=}")
+
     def forward(
         self,
         input_ids: Optional[torch.Tensor],
@@ -472,6 +492,8 @@ class LlamaModel(nn.Module):
 
         for i in range(self.start_layer, self.end_layer):
             layer = self.layers[i]
+            self.get_layer_status(layer)
+
             hidden_states, residual = layer(positions, hidden_states,
                                             kv_caches[i - self.start_layer],
                                             attn_metadata, residual)
@@ -622,6 +644,12 @@ class LlamaModel(nn.Module):
         logger.info(f'hosseins: LlamaModel -> load_weights() [{processed_params=}]')
         logger.info(f'hosseins: LlamaModel -> load_weights() [{len(params_dict.keys())=}]')
         logger.info(f'hosseins: LlamaModel -> load_weights() [{total_loaded_params=}]')
+
+        for name in params_dict:
+            param = params_dict[name]
+            print(f"hosseins: load_weights() {name=}")
+            print(f"hosseins: load_weights() {param.shape=}")
+            print(f"hosseins: load_weights() {get_shard_spec(param)=}")
 
         # tpu_activities = get_tpu_info(0)
         # cpu_mem_util = get_cpu_memory_util()

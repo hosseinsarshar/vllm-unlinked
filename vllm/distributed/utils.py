@@ -301,12 +301,16 @@ def shard_spmd(data, mesh=None, partition_spec=None, show_visual=False):
         logger.info("hosseins: after sharding param")
         visualize_tensor_sharding(data, use_color=False)
 
-def get_shard_spec(tensor):
+def get_shard_spec(tensor, show_visual=True):
     # logger.info(f"hosseins: get_shard_spec() -> [{type(tensor)=}]")
     xm.mark_step()
     if not is_spmd(): 
         return None
     sharding = torch_xla._XLAC._get_xla_sharding_spec(tensor)
+    if show_visual:
+        # logger.info("hosseins: after sharding param")
+        visualize_tensor_sharding(tensor, use_color=False)
+
     return sharding
 
 def enable_man_sharding(t):

@@ -154,8 +154,13 @@ class UnquantizedLinearMethod(LinearMethodBase):
         # tpu_activities = get_tpu_info(0)
         # cpu_mem_util = get_cpu_memory_util()
         # logger.info(f"hosseins: UnquantizedLinearMethod -> apply() [{tpu_activities=}]")
+        print(f"hosseins: UnquantizedLinearMethod -> apply() {layer.weight.shape=} {get_shard_spec(layer.weight)=}")
+        print(f"hosseins: UnquantizedLinearMethod -> apply() {x.shape=} {get_shard_spec(x)=}")
 
-        return F.linear(x, layer.weight, bias)
+        out = F.linear(x, layer.weight, bias)
+        print(f"hosseins: UnquantizedLinearMethod -> apply() {out.shape=} {get_shard_spec(out)=}")
+
+        return out
 
 
 class LinearBase(torch.nn.Module):
@@ -405,6 +410,9 @@ class ColumnParallelLinear(LinearBase):
         param.load_column_parallel_weight(loaded_weight=loaded_weight)
 
     def forward(self, input_):
+        print(f"hosseins: ColumnParallelLinear -> forward() {type(self)=}")
+        print(f"hosseins: ColumnParallelLinear -> forward() {type(self.quant_method)=}")
+
         bias = self.bias if not self.skip_bias_add else None
 
         # Matrix multiply.
